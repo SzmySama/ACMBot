@@ -35,3 +35,11 @@ nb run
 ## 如何与消息发送端联通
 以`NapCat`为例，
 请开启`反向WebSocket`，请使用OneBotV11API，地址填写`ws://127.0.0.1:8080/onebot/v11/ws`
+
+## TODO
+本项目处于初期开发阶段，暂时并没有实现实际功能
+
+- [ ] `洛谷` 
+- [ ] `AtCoder`
+- [ ] `CodeForces`
+- [ ] `NowCoder`
