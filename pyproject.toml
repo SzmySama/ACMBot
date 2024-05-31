@@ -50,6 +50,8 @@ dependencies = [
     "watchfiles==0.22.0",
     "websockets==12.0",
     "yarl==1.9.4",
+    "requests>=2.32.3",
+    "lxml>=5.2.2",
 ]
 license = {text = "MIT"}
 
