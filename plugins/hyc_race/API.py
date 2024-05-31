@@ -1,15 +1,22 @@
+import time
 import requests
 from lxml import etree
 import pprint
+import re
+from .RaceInfo import RaceInfo
+from nonebot import logger
+import random
+import hashlib
+import nonebot
+from datetime import datetime
 
-def fetch_atcoder_contests() -> list[dict]:
+def fetchAtcoderRaces() -> list[RaceInfo]:
     """
     Fetches the list of AtCoder contests from the AtCoder website.
 
     This function sends an HTTP GET request to the AtCoder website and then
     parses the HTML response to extract the contests. It returns a dictionary
-    where the keys are the contest infomations (as strings) and the values are the
-    corresponding URLs (also as strings).
+    keep the contest infomations
 
     Return:
     list[dict]
@@ -23,7 +30,6 @@ def fetch_atcoder_contests() -> list[dict]:
         response.encoding = response.apparent_encoding
         html_content = response.text
 
-
         tree = etree.HTML(html_content)
         xpath_contests = "//div[@class='col-sm-8']/div[@class='panel panel-default']"
         contests = tree.xpath(xpath_contests)
@@ -34,24 +40,54 @@ def fetch_atcoder_contests() -> list[dict]:
             title = contest.xpath(xpath_title)[0]
             now_race_map['Title'] = title
             all_data = contest.xpath(xpath_message)
+            regex_race_time = r"iso=(\d{4}\d{2}\d{2}T\d{4})"
+            regex_race_title = r'<a[^>]*>([^<]*)</a>'
+            regex_race_url = r'href="([^"]*)"'
             for data in all_data:
-                lines = data.split('\n')
-                # pprint.pprint(lines)
-                for line in lines:
-                    words = line.split(':')
-                    if len(words) > 1:
-                        now_race_map[words[0].replace("- ","")] = ":".join(words[1:])
-            pprint.pprint(now_race_map)
-            print(now_race_map.keys())
-            output.append(now_race_map)
-
-        # xpath = "//div[@class='col-sm-8']/div[@class='panel panel-default']"
-        # links: list[str] = tree.xpath(xpath)
-        
+                str_data = ''.join(data)
+                race_time = re.findall(regex_race_time,str_data)[0]
+                race_title = re.findall(regex_race_title,str_data)[0]
+                race_url = re.findall(regex_race_url,str_data)[0]
+                output.append(RaceInfo(race_title,race_time,race_url))
 
     except requests.RequestException as e:
         print(f"Error fetching data: {e}")
+
     return output
 
-if __name__ == "__main__":
-    fetch_atcoder_contests()
+def fetchCodeforcesRaces() -> list[RaceInfo]:
+    config = nonebot.get_driver().config
+    key= config.hycbot['codeforces']['key']
+    secret= config.hycbot['codeforces']['secret']
+    logger.info(key)
+    logger.info(secret)
+    api_url = "https://codeforces.com/api/"
+    api_mothed = "contest.list"
+    all_arguments = {
+        "apiKey": key,
+        "time": str(int(time.time())),
+        # 其他参数
+        "gym": "false",
+    }
+
+    rand_str = str(random.randint(100_000,1_000_999))
+    hash_source = f"{rand_str}/{api_mothed}?"
+    api_fullurl = f"{api_url}{api_mothed}?"
+
+    sorted_items = sorted(all_arguments.items())
+    for k,v in sorted_items:
+        hash_source+=f"{k}={v}&"
+        api_fullurl+=f"{k}={v}&"
+    hash_source = hash_source[:-1] + "#"
+    hash_source += secret
+
+    hash_sig = hashlib.sha512(hash_source.encode('utf-8')).hexdigest()
+    api_fullurl+=f"apiSig={rand_str}{hash_sig}"
+
+    response = requests.get(api_fullurl)
+    logger.info(response)
+    json_data = response.json()
+    output = []
+    for i in json_data['result'][:5]:
+        output.append(RaceInfo(i['name'],datetime.fromtimestamp(int(i['startTimeSeconds'])),f"https://codeforces.com/contests/{i['id']}"))
+    return output
