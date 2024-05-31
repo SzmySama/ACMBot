@@ -85,9 +85,13 @@ def fetchCodeforcesRaces() -> list[RaceInfo]:
     api_fullurl+=f"apiSig={rand_str}{hash_sig}"
 
     response = requests.get(api_fullurl)
-    logger.info(response)
-    json_data = response.json()
     output = []
-    for i in json_data['result'][:5]:
-        output.append(RaceInfo(i['name'],datetime.fromtimestamp(int(i['startTimeSeconds'])),f"https://codeforces.com/contests/{i['id']}"))
+    if (response.status_code != 200):
+        logger.error("请求失败")
+        output.append(RaceInfo("None","None","None\nCodeForces拒绝了访问申请"))
+    else:
+        logger.info(response)
+        json_data = response.json()
+        for i in json_data['result'][:5]:
+            output.append(RaceInfo(i['name'],datetime.fromtimestamp(int(i['startTimeSeconds'])),f"https://codeforces.com/contests/{i['id']}"))
     return output
