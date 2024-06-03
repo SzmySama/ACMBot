@@ -92,7 +92,7 @@ def fetchCodeforcesRaces() -> list[RaceInfo]:
     else:
         logger.info(response)
         json_data = response.json()
-        for i in json_data['result'][:5]:
+        for i in json_data['result'][:5][::-1]:
             output.append(RaceInfo(i['name'],datetime.fromtimestamp(int(i['startTimeSeconds'])),f"https://codeforces.com/contests/{i['id']}"))
     return output
 
@@ -110,7 +110,7 @@ def fetchNowcoderRaces() -> list[RaceInfo] :
         url = f"{base_url}{url}"
 
         title:str = i.xpath(".//h4/a/text()")[0]
-        
+
         time:str = i.xpath(".//ul/li[@class='match-time-icon']/text()")[0]
         time.replace(r"\n","")
         if not url.startswith("/dis"):
