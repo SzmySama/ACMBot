@@ -17,37 +17,27 @@ __plugin_meta__ = PluginMetadata(
 
 config = get_plugin_config(Config)
 
+def gen_message(data:list[RaceInfo]) -> str:
+    output = ""
+    for i in data:
+        output += f"比赛名称：{i.title}\n"
+        output += f"开始时间：{i.start_time}\n"
+        output += f"Link🌈：{i.url}\n\n"
+    
+    return output
+
+
 AtCoderHandler = on_command("近期at")
 @AtCoderHandler.handle()
 async def AtCoderHandleFunciton():
-    data = fetchAtcoderRaces()
-    target = ""
-    for i in data:
-        target += f"比赛名称：{i.title}\n"
-        target += f"开始时间：{i.start_time}\n"
-        target += f"Link🌈：{i.url}\n"
-    await AtCoderHandler.finish(target)
-
+    await AtCoderHandler.finish(gen_message(fetchAtcoderRaces()))
 
 CodeforcesHandler = on_command("近期cf")
 @CodeforcesHandler.handle()
 async def CodeforcesHandleFunction():
-    data = fetchCodeforcesRaces()
-    target = ""
-    for i in data:
-        target += f"比赛名称：{i.title}\n"
-        target += f"开始时间：{i.start_time}\n"
-        target += f"Link🌈：{i.url}\n"
-    await AtCoderHandler.finish(target)
-
+    await CodeforcesHandler.finish(gen_message(fetchCodeforcesRaces()))
 
 NowcoderHandler = on_command("近期nk")
 @NowcoderHandler.handle()
 async def NowcoderHandleFunction():
-    data = fetchNowcoderRaces()
-    target = ""
-    for i in data:
-        target += f"比赛名称：{i.title}\n"
-        target += f"开始时间：{i.start_time}\n"
-        target += f"Link🌈：{i.url}\n"
-    await AtCoderHandler.finish(target)
+    await NowcoderHandler.finish(gen_message(fetchNowcoderRaces()))
