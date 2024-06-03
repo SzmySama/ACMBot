@@ -70,7 +70,7 @@ def fetchCodeforcesRaces() -> list[RaceInfo]:
         "gym": "false",
     }
 
-    rand_str = str(random.randint(100_000,1_000_999))
+    rand_str = str(random.randint(100_000,1_000_000))
     hash_source = f"{rand_str}/{api_mothed}?"
     api_fullurl = f"{api_url}{api_mothed}?"
 
