@@ -41,7 +41,7 @@ nb run
 - [ ] `洛谷` 
 - [x] `AtCoder`
 - [x] `CodeForces`
-- [ ] `NowCoder`
+- [x] `NowCoder`
 
 ## 配置
 请在本项目下创建`.env`文件，添加`hycBot__Codeforces__secret`和`hycBot__Codeforces__key`，否则可能不能使用codeforces

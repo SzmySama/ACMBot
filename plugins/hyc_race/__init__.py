@@ -39,3 +39,15 @@ async def CodeforcesHandleFunction():
         target += f"开始时间：{i.start_time}\n"
         target += f"Link🌈：{i.url}\n"
     await AtCoderHandler.finish(target)
+
+
+NowcoderHandler = on_command("近期nk")
+@NowcoderHandler.handle()
+async def NowcoderHandleFunction():
+    data = fetchNowcoderRaces()
+    target = ""
+    for i in data:
+        target += f"比赛名称：{i.title}\n"
+        target += f"开始时间：{i.start_time}\n"
+        target += f"Link🌈：{i.url}\n"
+    await AtCoderHandler.finish(target)

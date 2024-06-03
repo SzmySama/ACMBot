@@ -95,3 +95,25 @@ def fetchCodeforcesRaces() -> list[RaceInfo]:
         for i in json_data['result'][:5]:
             output.append(RaceInfo(i['name'],datetime.fromtimestamp(int(i['startTimeSeconds'])),f"https://codeforces.com/contests/{i['id']}"))
     return output
+
+def fetchNowcoderRaces() -> list[RaceInfo] :
+    target_url = 'https://ac.nowcoder.com/acm/contest/vip-index'
+    response = requests.get(target_url)
+    tree = etree.HTML(response.text)
+    all_a = tree.xpath("//div[@class='platform-mod js-current']/div[@class='platform-item js-item ']/div[@class='platform-item-main']/div[@class='platform-item-cont']")
+    base_url = 'https://ac.nowcoder.com'
+
+    output:list[RaceInfo] = []
+
+    for i in all_a:
+        url:str = i.xpath(".//h4/a/@href")[0]
+        url = f"{base_url}{url}"
+
+        title:str = i.xpath(".//h4/a/text()")[0]
+        
+        time:str = i.xpath(".//ul/li[@class='match-time-icon']/text()")[0]
+        time.replace(r"\n","")
+        if not url.startswith("/dis"):
+            output.append(RaceInfo(title,time,url))
+    
+    return output
