@@ -1,28 +1,93 @@
+from nonebot import require
+
+require("nonebot_plugin_htmlrender")
+
+from nonebot_plugin_htmlrender import template_to_pic
 import time
 import requests
 from lxml import etree
 import pprint
 import re
-from .RaceInfo import RaceInfo
+from .models import RaceInfo, UserInfo, UserProfileModel
 from nonebot import logger
 import random
 import hashlib
 import nonebot
 from datetime import datetime
 
-def fetchAtcoderRaces() -> list[RaceInfo]:
-    """
-    Fetches the list of AtCoder contests from the AtCoder website.
 
-    This function sends an HTTP GET request to the AtCoder website and then
-    parses the HTML response to extract the contests. It returns a dictionary
-    keep the contest infomations
+async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
+    from pathlib import Path
 
-    Return:
-    list[dict]
-    the dict_keys is['Title', 'Contest URL', 'Start Time', 'Duration', 'Number of Tasks', 'Writer', 'Tester', 'Rated range']
-    """
-    url = 'https://atcoder.jp/'
+    template_path = str(Path(__file__).parent / "templates")
+    template_name = "template.j2"
+
+    templates: UserProfileModel = UserProfileModel(
+        headLogoURL=p.headLogoURL, username=p.nickname, rank="", rating=p.rating
+    )
+
+    logger.debug(templates.model_dump())
+    return await template_to_pic(
+        template_path=template_path,
+        template_name=template_name,
+        templates=templates.serialize(),
+        pages={
+            "viewport": {"width": 400, "height": 225},
+        },
+        wait=10,
+    )
+
+
+async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | None:
+    config = nonebot.get_driver().config
+    key = config.hycbot["codeforces"]["key"]
+    secret = config.hycbot["codeforces"]["secret"]
+    logger.info(key)
+    logger.info(secret)
+    api_url = "https://codeforces.com/api/"
+    all_arguments = {
+        "apiKey": key,
+        "time": str(int(time.time())),
+        # 其他参数
+        **args,
+    }
+
+    logger.info(all_arguments)
+    rand_str = str(random.randint(100_000, 1_000_000))
+    hash_source = f"{rand_str}/{api_mothed}?"
+    api_fullurl = f"{api_url}{api_mothed}?"
+
+    sorted_items = sorted(all_arguments.items())
+    for k, v in sorted_items:
+        hash_source += f"{k}={v}&"
+        api_fullurl += f"{k}={v}&"
+    hash_source = hash_source[:-1] + "#"
+    hash_source += secret
+
+    hash_sig = hashlib.sha512(hash_source.encode("utf-8")).hexdigest()
+    api_fullurl += f"apiSig={rand_str}{hash_sig}"
+
+    response = requests.get(api_fullurl)
+
+    return response.json() if response.status_code == 200 else None
+
+
+async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
+    json_data = await fetchCodeforcesAPI(
+        "user.info", {"handles": ";".join(users), "checkHistoricHandles": "false"}
+    )
+    output = []
+    if json_data is None:
+        logger.error("请求失败")
+    else:
+        for i in json_data["result"]:
+            output.append(UserInfo(i["handle"], i["rating"], i["rank"], i["avatar"]))
+
+    return output
+
+
+async def fetchAtcoderRaces() -> list[RaceInfo]:
+    url = "https://atcoder.jp/"
     output = []
     try:
         response = requests.get(url)
@@ -38,82 +103,62 @@ def fetchAtcoderRaces() -> list[RaceInfo]:
             xpath_title = ".//h3[@class='panel-title']/a/text()"
             xpath_message = ".//div[@class='panel-body blog-post']/text()"
             title = contest.xpath(xpath_title)[0]
-            now_race_map['Title'] = title
+            now_race_map["Title"] = title
             all_data = contest.xpath(xpath_message)
             regex_race_time = r"iso=(\d{4}\d{2}\d{2}T\d{4})"
-            regex_race_title = r'<a[^>]*>([^<]*)</a>'
+            regex_race_title = r"<a[^>]*>([^<]*)</a>"
             regex_race_url = r'href="([^"]*)"'
             for data in all_data:
-                str_data = ''.join(data)
-                race_time = re.findall(regex_race_time,str_data)[0]
-                race_title = re.findall(regex_race_title,str_data)[0]
-                race_url = re.findall(regex_race_url,str_data)[0]
-                output.append(RaceInfo(race_title,race_time,race_url))
+                str_data = "".join(data)
+                race_time = re.findall(regex_race_time, str_data)[0]
+                race_title = re.findall(regex_race_title, str_data)[0]
+                race_url = re.findall(regex_race_url, str_data)[0]
+                output.append(RaceInfo(race_title, race_time, race_url))
 
     except requests.RequestException as e:
         print(f"Error fetching data: {e}")
 
     return output
 
-def fetchCodeforcesRaces() -> list[RaceInfo]:
-    config = nonebot.get_driver().config
-    key= config.hycbot['codeforces']['key']
-    secret= config.hycbot['codeforces']['secret']
-    logger.info(key)
-    logger.info(secret)
-    api_url = "https://codeforces.com/api/"
-    api_mothed = "contest.list"
-    all_arguments = {
-        "apiKey": key,
-        "time": str(int(time.time())),
-        # 其他参数
-        "gym": "false",
-    }
 
-    rand_str = str(random.randint(100_000,1_000_000))
-    hash_source = f"{rand_str}/{api_mothed}?"
-    api_fullurl = f"{api_url}{api_mothed}?"
-
-    sorted_items = sorted(all_arguments.items())
-    for k,v in sorted_items:
-        hash_source+=f"{k}={v}&"
-        api_fullurl+=f"{k}={v}&"
-    hash_source = hash_source[:-1] + "#"
-    hash_source += secret
-
-    hash_sig = hashlib.sha512(hash_source.encode('utf-8')).hexdigest()
-    api_fullurl+=f"apiSig={rand_str}{hash_sig}"
-
-    response = requests.get(api_fullurl)
+async def fetchCodeforcesRaces() -> list[RaceInfo]:
+    json_data = await fetchCodeforcesAPI("contest.list", {"gym": "false"})
     output = []
-    if (response.status_code != 200):
+    if json_data is None:
         logger.error("请求失败")
-        output.append(RaceInfo("None","None","None\nCodeForces拒绝了访问申请"))
+        output.append(RaceInfo("None", "None", "None\nCodeForces拒绝了访问申请"))
     else:
-        logger.info(response)
-        json_data = response.json()
-        for i in json_data['result'][:5][::-1]:
-            output.append(RaceInfo(i['name'],datetime.fromtimestamp(int(i['startTimeSeconds'])),f"https://codeforces.com/contests/{i['id']}"))
+        for i in json_data["result"][:5][::-1]:
+            output.append(
+                RaceInfo(
+                    i["name"],
+                    datetime.fromtimestamp(int(i["startTimeSeconds"])),
+                    f"https://codeforces.com/contests/{i['id']}",
+                )
+            )
     return output
 
-def fetchNowcoderRaces() -> list[RaceInfo] :
-    target_url = 'https://ac.nowcoder.com/acm/contest/vip-index'
+
+async def fetchNowcoderRaces() -> list[RaceInfo]:
+    target_url = "https://ac.nowcoder.com/acm/contest/vip-index"
     response = requests.get(target_url)
     tree = etree.HTML(response.text)
-    all_a = tree.xpath("//div[@class='platform-mod js-current']/div[@class='platform-item js-item ']/div[@class='platform-item-main']/div[@class='platform-item-cont']")
-    base_url = 'https://ac.nowcoder.com'
+    all_a = tree.xpath(
+        "//div[@class='platform-mod js-current']/div[@class='platform-item js-item ']/div[@class='platform-item-main']/div[@class='platform-item-cont']"
+    )
+    base_url = "https://ac.nowcoder.com"
 
-    output:list[RaceInfo] = []
+    output: list[RaceInfo] = []
 
     for i in all_a:
-        url:str = i.xpath(".//h4/a/@href")[0]
+        url: str = i.xpath(".//h4/a/@href")[0]
         url = f"{base_url}{url}"
 
-        title:str = i.xpath(".//h4/a/text()")[0]
+        title: str = i.xpath(".//h4/a/text()")[0]
 
-        time:str = i.xpath(".//ul/li[@class='match-time-icon']/text()")[0]
-        time.replace(r"\n","")
+        time: str = i.xpath(".//ul/li[@class='match-time-icon']/text()")[0]
+        time.replace(r"\n", "")
         if not url.startswith("/dis"):
-            output.append(RaceInfo(title,time,url))
-    
+            output.append(RaceInfo(title, time, url))
+
     return output

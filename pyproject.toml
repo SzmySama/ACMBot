@@ -32,7 +32,7 @@ dependencies = [
     "nonebot-adapter-onebot==2.4.3",
     "nonebot2==2.3.1",
     "orjson==3.10.3",
-    "pydantic==2.7.2",
+    "pydantic>=2.7.2",
     "pydantic-core==2.18.3",
     "Pygments==2.18.0",
     "pygtrie==2.5.0",
@@ -53,6 +53,7 @@ dependencies = [
     "yarl==1.9.4",
     "requests>=2.32.3",
     "lxml>=5.2.2",
+    "nonebot-plugin-htmlrender>=0.3.2",
 ]
 license = {text = "MIT"}
 
@@ -62,7 +63,7 @@ adapters = [
 ]
 builtin_plugins = ["echo"]
 plugin_dirs = ["plugins"]
-plugins = []
+plugins = ["nonebot_plugin_htmlrender"]
 
 [tool.pdm]
 distribution = false
