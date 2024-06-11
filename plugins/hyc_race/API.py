@@ -1,4 +1,5 @@
 
+import asyncio
 from datetime import datetime
 import nonebot
 import hashlib
@@ -133,7 +134,10 @@ async def fetchCodeforcesRaces() -> list[RaceInfo]:
         logger.error("请求失败")
         output.append(RaceInfo("None", "None", "None\nCodeForces拒绝了访问申请"))
     else:
-        for i in json_data["result"][:5][::-1]:
+        now_time = time.time()
+        for i in json_data["result"]:
+            if i["startTimeSeconds"] < now_time:
+                break
             output.append(
                 RaceInfo(
                     title=i["name"],
@@ -142,7 +146,7 @@ async def fetchCodeforcesRaces() -> list[RaceInfo]:
                     duration_hours=float(i['durationSeconds'])/3600,
                 )
             )
-    return output
+    return output[::-1]
 
 
 async def fetchNowcoderRaces() -> list[RaceInfo]:
@@ -179,3 +183,23 @@ async def fetchNowcoderRaces() -> list[RaceInfo]:
             )
 
     return output
+
+
+async def fetchTodayRaces() -> list[RaceInfo]:
+    races: list[RaceInfo] = []
+    tasks = [
+        fetchAtcoderRaces(),
+        fetchCodeforcesRaces(),
+        fetchNowcoderRaces()
+    ]
+    current_time = time.localtime()
+    for task in asyncio.as_completed(tasks):
+        try:
+            result = await task
+            for i in result:
+                if i.start_time.tm_year == current_time.tm_year and i.start_time.tm_mon == current_time.tm_mon and i.start_time.tm_mday == current_time.tm_mday:
+                    races.append(i)
+        except Exception as e:
+            print(f"Error fetching races: {e}")
+
+    return races

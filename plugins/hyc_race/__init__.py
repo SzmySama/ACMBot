@@ -27,7 +27,7 @@ def gen_message(data: list[RaceInfo]) -> str:
         output += f"比赛时长：{i.duration_hours}小时\n"
         output += f"传送门->：{i.url}\n\n"
 
-    return output
+    return output if data else "没有获取到数据哦"
 
 
 AtCoderRaceHandler = on_command("近期at")
@@ -35,7 +35,7 @@ AtCoderRaceHandler = on_command("近期at")
 
 @AtCoderRaceHandler.handle()
 async def AtCoderRaceHandleFunciton():
-    await AtCoderRaceHandler.finish(gen_message(await fetchAtcoderRaces()))
+    await AtCoderRaceHandler.finish("近期AtCoder：\n"+gen_message(await fetchAtcoderRaces()))
 
 
 CodeforcesRaceHandler = on_command("近期cf")
@@ -43,7 +43,7 @@ CodeforcesRaceHandler = on_command("近期cf")
 
 @CodeforcesRaceHandler.handle()
 async def CodeforcesRaceHandleFunction():
-    await CodeforcesRaceHandler.finish(gen_message(await fetchCodeforcesRaces()))
+    await CodeforcesRaceHandler.finish("近期CodeForces：\n"+gen_message(await fetchCodeforcesRaces()))
 
 
 NowcoderRaceHandler = on_command("近期nk")
@@ -51,7 +51,7 @@ NowcoderRaceHandler = on_command("近期nk")
 
 @NowcoderRaceHandler.handle()
 async def NowcoderRaceHandleFunction():
-    await NowcoderRaceHandler.finish(gen_message(await fetchNowcoderRaces()))
+    await NowcoderRaceHandler.finish("近期牛客：\n"+gen_message(await fetchNowcoderRaces()))
 
 
 CodeforcesUserInfoHandler = on_command("cf")
@@ -65,3 +65,11 @@ async def CodeforcesUserInfohandleFunction(args: Message = CommandArg()):
         await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))
     else:
         await CodeforcesUserInfoHandler.finish("请输入用户名")
+
+
+TodyRaceHandler = on_command("今日比赛")
+
+
+@TodyRaceHandler.handle()
+async def TodyRaceHandleFunction():
+    await NowcoderRaceHandler.finish("今日比赛：\n"+gen_message(await fetchTodayRaces()))
