@@ -1,19 +1,21 @@
-from nonebot import require
 
-require("nonebot_plugin_htmlrender")
-
-from nonebot_plugin_htmlrender import template_to_pic
-import time
-import requests
-from lxml import etree
-import pprint
-import re
-from .models import RaceInfo, UserInfo, UserProfileModel
-from nonebot import logger
-import random
-import hashlib
-import nonebot
 from datetime import datetime
+import nonebot
+import hashlib
+import random
+from nonebot import logger
+from .models import RaceInfo, UserInfo, UserProfileModel
+import re
+import pprint
+from lxml import etree
+import requests
+import time
+
+# fmt: off
+from nonebot import require
+require("nonebot_plugin_htmlrender")
+from nonebot_plugin_htmlrender import template_to_pic
+# fmt: on
 
 
 async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
@@ -74,14 +76,16 @@ async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | No
 
 async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
     json_data = await fetchCodeforcesAPI(
-        "user.info", {"handles": ";".join(users), "checkHistoricHandles": "false"}
+        "user.info", {"handles": ";".join(
+            users), "checkHistoricHandles": "false"}
     )
     output = []
     if json_data is None:
         logger.error("请求失败")
     else:
         for i in json_data["result"]:
-            output.append(UserInfo(i["handle"], i["rating"], i["rank"], i["avatar"]))
+            output.append(
+                UserInfo(i["handle"], i["rating"], i["rank"], i["avatar"]))
 
     return output
 
@@ -89,35 +93,36 @@ async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
 async def fetchAtcoderRaces() -> list[RaceInfo]:
     url = "https://atcoder.jp/"
     output = []
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        response.encoding = response.apparent_encoding
-        html_content = response.text
+    response = requests.get(url)
+    response.raise_for_status()
+    response.encoding = response.apparent_encoding
+    html_content = response.text
 
-        tree = etree.HTML(html_content)
-        xpath_contests = "//div[@class='col-sm-8']/div[@class='panel panel-default']"
-        contests = tree.xpath(xpath_contests)
-        for contest in contests:
-            now_race_map = {}
-            xpath_title = ".//h3[@class='panel-title']/a/text()"
-            xpath_message = ".//div[@class='panel-body blog-post']/text()"
-            title = contest.xpath(xpath_title)[0]
-            now_race_map["Title"] = title
-            all_data = contest.xpath(xpath_message)
-            regex_race_time = r"iso=(\d{4}\d{2}\d{2}T\d{4})"
-            regex_race_title = r"<a[^>]*>([^<]*)</a>"
-            regex_race_url = r'href="([^"]*)"'
-            for data in all_data:
-                str_data = "".join(data)
-                race_time = re.findall(regex_race_time, str_data)[0]
-                race_title = re.findall(regex_race_title, str_data)[0]
-                race_url = re.findall(regex_race_url, str_data)[0]
-                output.append(RaceInfo(race_title, race_time, race_url))
+    xpath_contests = "//div[@class='col-sm-8']/div[@class='panel panel-default']"
+    xpath_title = ".//h3[@class='panel-title']/a/text()"
+    xpath_message = ".//div[@class='panel-body blog-post']/text()"
+    regex_race_time = r"iso=(\d{4}\d{2}\d{2}T\d{4})"
+    regex_race_title = r"<a[^>]*>([^<]*)</a>"
+    regex_race_url = r'href="([^"]*)"'
+    regex_keep_time = r'- Duration: *(\d+).*\n'
 
-    except requests.RequestException as e:
-        print(f"Error fetching data: {e}")
-
+    tree = etree.HTML(html_content)
+    contests = tree.xpath(xpath_contests)
+    for contest in contests[::-1]:
+        title = contest.xpath(xpath_title)[0]
+        all_data = contest.xpath(xpath_message)
+        for data in all_data:
+            str_data = "".join(data)
+            race_time_origin = re.findall(regex_race_time, str_data)[0]
+            race_time_obj = time.strptime(race_time_origin, "%Y%m%dT%H%M")
+            race_timestamp = time.mktime(race_time_obj)
+            race_timestamp += 3600  # 原来是+7时区的，现在转换成+8时区
+            race_time = time.localtime(race_timestamp)
+            race_title: str = re.findall(regex_race_title, str_data)[0]
+            race_url: str = re.findall(regex_race_url, str_data)[0]
+            race_keep_time: int = int(re.findall(regex_keep_time, str_data)[0])
+            output.append(RaceInfo(title=race_title, url=race_url,
+                          start_time=race_time, duration_hours=race_keep_time/60))
     return output
 
 
@@ -131,9 +136,10 @@ async def fetchCodeforcesRaces() -> list[RaceInfo]:
         for i in json_data["result"][:5][::-1]:
             output.append(
                 RaceInfo(
-                    i["name"],
-                    datetime.fromtimestamp(int(i["startTimeSeconds"])),
-                    f"https://codeforces.com/contests/{i['id']}",
+                    title=i["name"],
+                    start_time=time.localtime(float(i["startTimeSeconds"])),
+                    url=f"https://codeforces.com/contests/{i['id']}",
+                    duration_hours=float(i['durationSeconds'])/3600,
                 )
             )
     return output
@@ -156,9 +162,20 @@ async def fetchNowcoderRaces() -> list[RaceInfo]:
 
         title: str = i.xpath(".//h4/a/text()")[0]
 
-        time: str = i.xpath(".//ul/li[@class='match-time-icon']/text()")[0]
-        time.replace(r"\n", "")
+        time_str: str = i.xpath(".//ul/li[@class='match-time-icon']/text()")[0]
+        time_str.replace("\n", "")
         if not url.startswith("/dis"):
-            output.append(RaceInfo(title, time, url))
+            start_time_str = re.findall(
+                r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})", time_str)[0]
+            keep_time_str = re.findall(r"\([^)]*(\d)[^(]*\)", time_str)[0]
+            start_time = time.strptime(start_time_str, "%Y-%m-%d %H:%M")
+            output.append(
+                RaceInfo(
+                    title=title,
+                    start_time=start_time,
+                    url=url,
+                    duration_hours=float(keep_time_str),
+                )
+            )
 
     return output

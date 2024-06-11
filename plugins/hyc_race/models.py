@@ -1,15 +1,13 @@
+from time import struct_time
 from pydantic import BaseModel
 
 
 class RaceInfo:
-    title: str
-    start_time: str
-    url: str
-
-    def __init__(self, title: str, start_time: str, url: str) -> None:
+    def __init__(self, title: str, url: str, start_time: struct_time, duration_hours: float):
         self.title = title
-        self.start_time = start_time
         self.url = url
+        self.start_time = start_time
+        self.duration_hours = duration_hours
 
 
 class UserInfo:
