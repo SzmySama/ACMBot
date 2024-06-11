@@ -24,7 +24,8 @@ def gen_message(data: list[RaceInfo]) -> str:
     for i in data:
         output += f"比赛名称：{i.title}\n"
         output += f"开始时间：{time.strftime("%Y-%m-%d %H:%M:%S", i.start_time)}\n"
-        output += f"比赛时长：{i.duration_hours}小时\n"
+        output += f"比赛时长：{int(i.duration_hours)
+                          }小时{int(i.duration_hours * 60 % 60)}分钟\n"
         output += f"传送门->：{i.url}\n\n"
 
     return output if data else "没有获取到数据哦"
