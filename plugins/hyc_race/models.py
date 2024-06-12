@@ -3,11 +3,11 @@ from pydantic import BaseModel
 
 
 class RaceInfo:
-    def __init__(self, title: str, url: str, start_time: struct_time, duration_hours: float):
-        self.title = title
-        self.url = url
-        self.start_time = start_time
-        self.duration_hours = duration_hours
+    def __init__(self, title: str, url: str, start_time: struct_time, duration_minutes: int):
+        self.title: str = title
+        self.url: str = url
+        self.start_time: struct_time = start_time
+        self.duration_minutes: int = duration_minutes
 
 
 class UserInfo:

@@ -1,13 +1,11 @@
 
 import asyncio
-from datetime import datetime
 import nonebot
 import hashlib
 import random
 from nonebot import logger
 from .models import RaceInfo, UserInfo, UserProfileModel
 import re
-import pprint
 from lxml import etree
 import requests
 import time
@@ -92,38 +90,34 @@ async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
 
 
 async def fetchAtcoderRaces() -> list[RaceInfo]:
-    url = "https://atcoder.jp/"
     output = []
-    response = requests.get(url)
-    response.raise_for_status()
-    response.encoding = response.apparent_encoding
-    html_content = response.text
+    url = "https://atcoder.jp/contests/"
 
-    xpath_contests = "//div[@class='col-sm-8']/div[@class='panel panel-default']"
-    xpath_title = ".//h3[@class='panel-title']/a/text()"
-    xpath_message = ".//div[@class='panel-body blog-post']/text()"
-    regex_race_time = r"iso=(\d{4}\d{2}\d{2}T\d{4})"
-    regex_race_title = r"<a[^>]*>([^<]*)</a>"
-    regex_race_url = r'href="([^"]*)"'
-    regex_keep_time = r'- Duration: *(\d+).*\n'
+    xpath_fullpage2allRace = "//div[@id='contest-table-upcoming']/div/div/table/tbody/tr"
+    xpath_start_time = ".//a/time/text()"
+    xpath_race_URL = ".//a/@href"
+    xpath_race_title = ".//a/text()"
+    xpath_duration_time = ".//text()"
 
-    tree = etree.HTML(html_content)
-    contests = tree.xpath(xpath_contests)
-    for contest in contests[::-1]:
-        title = contest.xpath(xpath_title)[0]
-        all_data = contest.xpath(xpath_message)
-        for data in all_data:
-            str_data = "".join(data)
-            race_time_origin = re.findall(regex_race_time, str_data)[0]
-            race_time_obj = time.strptime(race_time_origin, "%Y%m%dT%H%M")
-            race_timestamp = time.mktime(race_time_obj)
-            race_timestamp += 3600  # 原来是+7时区的，现在转换成+8时区
-            race_time = time.localtime(race_timestamp)
-            race_title: str = re.findall(regex_race_title, str_data)[0]
-            race_url: str = re.findall(regex_race_url, str_data)[0]
-            race_keep_time: int = int(re.findall(regex_keep_time, str_data)[0])
-            output.append(RaceInfo(title=race_title, url=race_url,
-                          start_time=race_time, duration_hours=race_keep_time/60))
+    response = requests.get(url).text
+    tree = etree.HTML(response)
+
+    all_race = tree.xpath(xpath_fullpage2allRace)
+    for race in all_race:
+        elements = race.xpath(".//td")
+        element_start_time = elements[0]
+        element_race = elements[1]
+        element_duration_time = elements[2]
+
+        start_time = element_start_time.xpath(xpath_start_time)[0]
+        race_URL = element_race.xpath(xpath_race_URL)[0]
+        race_title = element_race.xpath(xpath_race_title)[0]
+        race_duration_time = element_duration_time.xpath(xpath_duration_time)[
+            0]
+        hours, minutes = map(int, race_duration_time.split(':'))
+        output.append(RaceInfo(race_title, f"{url}{race_URL}", time.strptime(
+            start_time, '%Y-%m-%d %H:%M:%S%z'), hours*60 + minutes))
+
     return output
 
 
@@ -143,7 +137,7 @@ async def fetchCodeforcesRaces() -> list[RaceInfo]:
                     title=i["name"],
                     start_time=time.localtime(float(i["startTimeSeconds"])),
                     url=f"https://codeforces.com/contests/{i['id']}",
-                    duration_hours=float(i['durationSeconds'])/3600,
+                    duration_minutes=float(i['durationSeconds'])/60,
                 )
             )
     return output[::-1]
@@ -178,7 +172,7 @@ async def fetchNowcoderRaces() -> list[RaceInfo]:
                     title=title,
                     start_time=start_time,
                     url=url,
-                    duration_hours=float(keep_time_str),
+                    duration_minutes=int(keep_time_str) * 60,
                 )
             )
 
