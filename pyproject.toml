@@ -54,6 +54,7 @@ dependencies = [
     "requests>=2.32.3",
     "lxml>=5.2.2",
     "nonebot-plugin-htmlrender>=0.3.2",
+    "pymysql>=1.1.1",
 ]
 license = {text = "MIT"}
 
