@@ -162,3 +162,4 @@ cython_debug/
 #.idea/
 pdm.lock
 src/
+bot.py

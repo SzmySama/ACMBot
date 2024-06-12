@@ -36,12 +36,6 @@ nb run
 以`NapCat`为例，
 请开启`反向WebSocket`，请使用OneBotV11API，地址填写`ws://127.0.0.1:8080/onebot/v11/ws`
 
-## TODO
-
-- [ ] `洛谷` 
-- [x] `AtCoder`
-- [x] `CodeForces`
-- [x] `NowCoder`
 
 ## 配置
 请在本项目下创建`.env`文件，添加`hycBot__Codeforces__secret`和`hycBot__Codeforces__key`，否则可能不能使用codeforces

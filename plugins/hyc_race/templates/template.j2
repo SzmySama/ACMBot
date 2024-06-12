@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=2.0" />
+  <link rel="stylesheet" href="./bootstrap.min.css" />
+  <title>Document</title>
+  <style>
+    body {
+      font-family: "思源黑体 CN", Tahoma, Verdana, STHeiTi, simsun, sans-serif;
+    }
+
+    .color-newbie {
+      background-image: radial-gradient(circle at top right,
+          #424242 0%,
+          #78909c);
+    }
+
+    .color-pupil {
+      background-image: radial-gradient(circle at top right,
+          #33691e 0%,
+          #9ccc65);
+    }
+
+    .color-specialist {
+      background-image: radial-gradient(circle at top right,
+          #004d40 0%,
+          #26a69a);
+    }
+
+    .color-expert {
+      background-image: radial-gradient(circle at top right,
+          #283593 0%,
+          #7986cb);
+    }
+
+    .color-candidate-master {
+      background-image: radial-gradient(circle at top right,
+          #880e4f 0%,
+          #ec407a);
+    }
+
+    .color-master {
+      background-image: radial-gradient(circle at top right,
+          #ef6c00 0%,
+          #ffa726);
+    }
+
+    .color-international-master {
+      background-image: radial-gradient(circle at top right,
+          #ef6c00 0%,
+          #ffa726);
+    }
+
+    .color-grandmaster {
+      background-image: radial-gradient(circle at top right,
+          #e80202 0%,
+          #c04341);
+    }
+
+    .color-international-grandmaster {
+      background-image: radial-gradient(circle at top right,
+          #e80202 0%,
+          #c04341);
+    }
+
+    .color-legendary-grandmaster {
+      background-image: radial-gradient(circle at top right,
+          #770000 0%,
+          #b32a28);
+    }
+
+    .codeforceLogoDiv div {
+      position: absolute;
+      bottom: 0px;
+      width: 4px;
+    }
+
+    .font-sz-12 {
+      font-size: 12px;
+    }
+
+    .font-sz-32 {
+      font-size: 32px;
+    }
+
+    .font-sz-16 {
+      font-size: 16px;
+    }
+
+    .font-weight-300 {
+      font-weight: 300;
+    }
+
+    .font-weight-500 {
+      font-weight: 500;
+    }
+
+    .font-weight-800 {
+      font-weight: 800;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="color-{{level}} position-absolute" style="width: 400px; height: 225px">
+    <!-- CodeForces Logo -->
+    <h4 class="d-flex position-absolute" style="
+          font-weight: 800;
+          font-size: 16px;
+          height: 16px;
+          top: 16px;
+          left: 16px;
+        ">
+      <div class="d-flex codeforceLogoDiv" style="height: 16px; width: 16px; position: relative">
+        <div style="
+              height: 10px;
+              background: linear-gradient(#ffd36e, #ffc11b);
+              left: 1px;
+            "></div>
+        <div style="
+              height: 14px;
+              background: linear-gradient(#009bd5, #0083c4);
+              left: 6px;
+            "></div>
+        <div style="
+              height: 8px;
+              background: linear-gradient(#d4001e, #bd001d);
+              left: 11px;
+            "></div>
+      </div>
+      <span>Code</span><span style="color: #30609e">Forces</span>
+    </h4>
+    <!-- 排名 -->
+    <div class="position-absolute text-white" style="font-weight: 600; top: 8px; right: 16px; text-align: right">
+      <p style="height: 8px">Personal Profile</p>
+      <p style="height: 8px">个人信息</p>
+    </div>
+
+    <!-- user logo -->
+    <div class="position-absolute" style="
+      height: 64px;
+      width: 64px;
+      top: 64px;
+      left: 16px;
+      background-image: url({{ headLogoURL }});
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    "></div>
+
+    <!-- username -->
+    <div class="position-absolute" style="top: 64px; left: 96px; height: 64px">
+      <p class="text-white font-sz-12 font-weight-300" style="height: 0px">
+        USERNAME
+      </p>
+      <p class="text-white font-sz-32 font-weight-500">{{ username }}</p>
+    </div>
+
+    <!-- rank -->
+    <div class="position-absolute" style="bottom: 8px; left: 16px">
+      <p class="text-white font-sz-16 font-weight-300" style="height: 0px">
+        Rank
+      </p>
+      <p class="text-white font-sz-32 font-weight-500" style="height: 32px">
+        {{ rank }}
+      </p>
+    </div>
+    <!-- Rating -->
+    <div class="position-absolute" style="bottom: 16px; right: 16px; text-align: right">
+      <p class="text-white font-weight-500 font-sz-16" style="height: 0px; margin-bottom: 8px">
+        Contest Rating
+      </p>
+      <p class="text-white font-weight-800" style="font-size: 64px; height: 64px">
+        {{ rating }}
+      </p>
+    </div>
+  </div>
+</body>
+
+</html>
