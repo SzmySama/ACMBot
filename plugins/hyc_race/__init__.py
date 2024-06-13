@@ -1,13 +1,21 @@
-from nonebot import get_plugin_config
-from nonebot.plugin import PluginMetadata
-from nonebot import on_command
-from nonebot.adapters import Message
-from nonebot.params import CommandArg
-from nonebot.adapters.onebot.v11 import MessageSegment
-from .models import RaceInfo
-from .config import Config
-from .API import *
+import time
 
+from nonebot import get_plugin_config, on_command
+from nonebot.adapters import Message
+from nonebot.adapters.onebot.v11 import MessageSegment
+from nonebot.params import CommandArg
+from nonebot.plugin import PluginMetadata
+
+from .API import (
+    fetchAtcoderRaces,
+    fetchCodeforcesRaces,
+    fetchCodeforcesUserInfo,
+    fetchNowcoderRaces,
+    fetchTodayRaces,
+    genCodeforcesUserProlfile,
+)
+from .config import Config
+from .models import RaceInfo
 
 __plugin_meta__ = PluginMetadata(
     name="hyc_race",
@@ -37,7 +45,9 @@ AtCoderRaceHandler = on_command("近期at")
 
 @AtCoderRaceHandler.handle()
 async def AtCoderRaceHandleFunciton():
-    await AtCoderRaceHandler.finish("近期AtCoder：\n"+gen_message(await fetchAtcoderRaces()))
+    await AtCoderRaceHandler.finish(
+        "近期AtCoder：\n" + gen_message(await fetchAtcoderRaces())
+    )
 
 
 CodeforcesRaceHandler = on_command("近期cf")
@@ -45,7 +55,9 @@ CodeforcesRaceHandler = on_command("近期cf")
 
 @CodeforcesRaceHandler.handle()
 async def CodeforcesRaceHandleFunction():
-    await CodeforcesRaceHandler.finish("近期CodeForces：\n"+gen_message(await fetchCodeforcesRaces()))
+    await CodeforcesRaceHandler.finish(
+        "近期CodeForces：\n" + gen_message(await fetchCodeforcesRaces())
+    )
 
 
 NowcoderRaceHandler = on_command("近期nk")
@@ -53,7 +65,9 @@ NowcoderRaceHandler = on_command("近期nk")
 
 @NowcoderRaceHandler.handle()
 async def NowcoderRaceHandleFunction():
-    await NowcoderRaceHandler.finish("近期牛客：\n"+gen_message(await fetchNowcoderRaces()))
+    await NowcoderRaceHandler.finish(
+        "近期牛客：\n" + gen_message(await fetchNowcoderRaces())
+    )
 
 
 CodeforcesUserInfoHandler = on_command("cf")
@@ -74,4 +88,6 @@ TodyRaceHandler = on_command("今日比赛")
 
 @TodyRaceHandler.handle()
 async def TodyRaceHandleFunction():
-    await NowcoderRaceHandler.finish("今日比赛：\n"+gen_message(await fetchTodayRaces()))
+    await NowcoderRaceHandler.finish(
+        "今日比赛：\n" + gen_message(await fetchTodayRaces())
+    )
