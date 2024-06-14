@@ -61,3 +61,18 @@ nb run
 
 ## 配置
 请在本项目下创建`.env`文件，添加`ACM__Codeforces__secret`和`ACM_Codeforces__key`，否则可能不能使用codeforces
+
+例如
+```prod
+ACM__Codeforces__secret=xxx
+ACM__Codeforces__key=xxx
+```
+或者如下形式
+```prod
+ACM={
+    "Codeforces": {
+        "key" = "xxx",
+        "secret" = "xxx"
+    }
+}
+```
