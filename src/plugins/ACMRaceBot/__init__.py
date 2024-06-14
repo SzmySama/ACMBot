@@ -1,6 +1,5 @@
-import time
-
 from nonebot import get_plugin_config, on_command
+import nonebot
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.params import CommandArg
@@ -31,8 +30,9 @@ def gen_message(data: list[RaceInfo]) -> str:
     output = ""
     for i in data:
         minutes = i.duration_minutes % 60
-        output += f"比赛名称：{i.title}\n"
-        output += f"开始时间：{time.strftime("%Y-%m-%d %H:%M:%S", i.start_time)}\n"
+        output += f"{i.title}\n"
+        output += f"开始时间：{i.start_time.to(
+            "Asia/Shanghai").format('YYYY-MM-DD HH:mm:ss')}\n"
         output += f"比赛时长：{int(i.duration_minutes / 60)
                           }小时{f"{minutes}分钟" if minutes > 0 else ""}\n"
         output += f"传送门->：{i.url}\n\n"

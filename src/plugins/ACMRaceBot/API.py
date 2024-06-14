@@ -5,6 +5,7 @@ import re
 import time
 from typing import Any
 
+import arrow
 import nonebot
 import requests
 from lxml import etree
@@ -43,8 +44,8 @@ async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
 
 async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | None:
     config = nonebot.get_driver().config
-    key = config.ACM["codeforces"]["key"]
-    secret = config.ACM["codeforces"]["secret"]
+    key = config.acm["codeforces"]["key"]
+    secret = config.acm["codeforces"]["secret"]
     logger.info(key)
     logger.info(secret)
     api_url = "https://codeforces.com/api/"
@@ -93,6 +94,7 @@ async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
 
 async def fetchAtcoderRaces() -> list[RaceInfo]:
     output = []
+    base_url = "https://atcoder.jp"
     url = "https://atcoder.jp/contests/"
 
     xpath_fullpage2allRace = (
@@ -104,26 +106,28 @@ async def fetchAtcoderRaces() -> list[RaceInfo]:
     xpath_duration_time = ".//text()"
 
     response = requests.get(url).text
-    tree = etree.HTML(response)
+    tree: etree._Element = etree.HTML(response, None)
 
-    all_race: Any = tree.xpath(xpath_fullpage2allRace)
+    all_race: list[etree._Element] = tree.xpath(xpath_fullpage2allRace)
     for race in all_race:
-        elements = race.xpath(".//td")
+        elements: list[etree._Element] = race.xpath(".//td")
         element_start_time = elements[0]
         element_race = elements[1]
         element_duration_time = elements[2]
 
+        # fmt: off
         start_time = element_start_time.xpath(xpath_start_time)[0]
         race_URL = element_race.xpath(xpath_race_URL)[0]
         race_title = element_race.xpath(xpath_race_title)[0]
-        race_duration_time = element_duration_time.xpath(xpath_duration_time)[
-            0]
+        race_duration_time = element_duration_time.xpath(xpath_duration_time)[0]
+        # fmt: on
+
         hours, minutes = map(int, race_duration_time.split(":"))
         output.append(
             RaceInfo(
                 race_title,
-                f"{url}{race_URL}",
-                time.strptime(start_time, "%Y-%m-%d %H:%M:%S%z"),
+                f"{base_url}{race_URL}",
+                arrow.get(start_time),
                 hours * 60 + minutes,
             )
         )
@@ -144,7 +148,7 @@ async def fetchCodeforcesRaces() -> list[RaceInfo]:
             output.append(
                 RaceInfo(
                     title=i["name"],
-                    start_time=time.localtime(float(i["startTimeSeconds"])),
+                    start_time=arrow.get(i["startTimeSeconds"]),
                     url=f"https://codeforces.com/contests/{i['id']}",
                     duration_minutes=int(i["durationSeconds"]) // 60,
                 )
@@ -155,7 +159,7 @@ async def fetchCodeforcesRaces() -> list[RaceInfo]:
 async def fetchNowcoderRaces() -> list[RaceInfo]:
     target_url = "https://ac.nowcoder.com/acm/contest/vip-index"
     response = requests.get(target_url)
-    tree = etree.HTML(response.text)
+    tree = etree.HTML(response.text, None)
     all_a: Any = tree.xpath(
         "//div[@class='platform-mod js-current']/div[@class='platform-item js-item ']/div[@class='platform-item-main']/div[@class='platform-item-cont']"
     )
@@ -175,11 +179,10 @@ async def fetchNowcoderRaces() -> list[RaceInfo]:
             start_time_str = re.findall(
                 r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})", time_str)[0]
             keep_time_str = re.findall(r"\([^)]*(\d)[^(]*\)", time_str)[0]
-            start_time = time.strptime(start_time_str, "%Y-%m-%d %H:%M")
             output.append(
                 RaceInfo(
                     title=title,
-                    start_time=start_time,
+                    start_time=arrow.get(start_time_str),
                     url=url,
                     duration_minutes=int(keep_time_str) * 60,
                 )
