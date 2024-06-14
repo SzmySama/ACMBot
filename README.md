@@ -13,6 +13,18 @@
 
 如果您认为这个项目对您帮助很大，可以考虑捐赠此项目，我承诺所有此渠道的收入将会用于开发和服务器维护
 
+## TODO
+### 个人信息展示
+- [x] CodeForces | usage: `cf [username]`
+- [ ] AtCoder
+- [ ] NowCoder
+### 近期比赛
+- [x] CodeForces | usage: `近期cf`
+- [x] AtCoder | usage: `近期at`
+- [x] NowCoder | usage: `近期nk`
+### 其他
+- [x] 今日比赛
+
 ## 如何开始
 首先请安装依赖
 
