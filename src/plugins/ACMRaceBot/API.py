@@ -3,7 +3,6 @@ import hashlib
 import random
 import re
 import time
-from tracemalloc import start
 from typing import Any
 
 import arrow
@@ -21,6 +20,16 @@ from nonebot_plugin_htmlrender import (  # type: ignore[import-untyped] # noqa: 
 # fmt: on
 
 
+async def getCodeforcesUserSolvedNumber(handle: str) -> int:
+    url = f"https://codeforces.com/profile/{handle}"
+    response = requests.get(url).text
+    tree: etree._Element = etree.HTML(response, None)
+    result: list[etree._Element] = tree.xpath(
+        "//div[@class='_UserActivityFrame_footer']/div/div/div/text()")
+    target: str = str(result[0])
+    return int(target.split(" ")[0])
+
+
 async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
     from pathlib import Path
 
@@ -28,7 +37,7 @@ async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
     template_name = "template.j2"
 
     templates: UserProfileModel = UserProfileModel(
-        headLogoURL=p.headLogoURL, username=p.nickname, rank="", rating=p.rating
+        headLogoURL=p.headLogoURL, username=p.nickname, solved=p.solved, rating=p.rating
     )
 
     logger.debug(templates.model_dump())
@@ -38,8 +47,7 @@ async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
         templates=templates.serialize(),
         pages={
             "viewport": {"width": 400, "height": 225},
-        },
-        wait=10,
+        }
     )
 
 
@@ -88,7 +96,7 @@ async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
     else:
         for i in json_data["result"]:
             output.append(
-                UserInfo(i["handle"], i["rating"], i["rank"], i["avatar"]))
+                UserInfo(i["handle"], i["rating"], await getCodeforcesUserSolvedNumber(i["handle"]), i["avatar"]))
 
     return output
 
