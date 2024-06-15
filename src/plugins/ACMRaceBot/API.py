@@ -45,8 +45,8 @@ async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
 
 async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | None:
     config = nonebot.get_driver().config
-    key = config.ACM["codeforces"]["key"]
-    secret = config.ACM["codeforces"]["secret"]
+    key = config.acm["codeforces"]["key"]
+    secret = config.acm["codeforces"]["secret"]
     logger.info(key)
     logger.info(secret)
     api_url = "https://codeforces.com/api/"

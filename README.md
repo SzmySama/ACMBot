@@ -67,12 +67,3 @@ nb run
 ACM__Codeforces__secret=xxx
 ACM__Codeforces__key=xxx
 ```
-或者如下形式
-```prod
-ACM={
-    "Codeforces": {
-        "key" = "xxx",
-        "secret" = "xxx"
-    }
-}
-```
