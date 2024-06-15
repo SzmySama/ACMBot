@@ -1,15 +1,15 @@
-from time import struct_time
+from arrow import Arrow
 
 from pydantic import BaseModel
 
 
 class RaceInfo:
     def __init__(
-        self, title: str, url: str, start_time: struct_time, duration_minutes: int
+        self, title: str, url: str, start_time: Arrow, duration_minutes: int
     ):
         self.title: str = title
         self.url: str = url
-        self.start_time: struct_time = start_time
+        self.start_time: Arrow = start_time
         self.duration_minutes: int = duration_minutes
 
 
