@@ -29,7 +29,7 @@ async def getCodeforcesUserSolvedNumber(handle: str) -> int:
             "//div[@class='_UserActivityFrame_footer']/div/div/div/text()")
         target: str = str(result[0])
         return int(target.split(" ")[0])
-    finally:
+    except Exception:
         return 0
 
 
@@ -218,6 +218,20 @@ async def fetchTodayRaces() -> list[RaceInfo]:
                     and i.start_time.tm_mday == current_time.tm_mday
                 ):
                     races.append(i)
+        except Exception as e:
+            print(f"Error fetching races: {e}")
+
+    return races
+
+
+async def fetchAllRaces() -> list[RaceInfo]:
+    races: list[RaceInfo] = []
+    tasks = [fetchAtcoderRaces(), fetchCodeforcesRaces(), fetchNowcoderRaces()]
+    for task in asyncio.as_completed(tasks):
+        try:
+            result = await task
+            for i in result:
+                races.append(i)
         except Exception as e:
             print(f"Error fetching races: {e}")
 

@@ -10,6 +10,7 @@ from .API import (
     fetchCodeforcesUserInfo,
     fetchNowcoderRaces,
     fetchTodayRaces,
+    fetchAllRaces,
     genCodeforcesUserProlfile,
 )
 from .config import Config
@@ -85,11 +86,20 @@ async def CodeforcesUserInfohandleFunction(args: Message = CommandArg()):
         await CodeforcesUserInfoHandler.finish("请输入用户名")
 
 
-TodyRaceHandler = on_command("今日比赛")
+TodayRaceHandler = on_command("今日比赛")
 
 
-@TodyRaceHandler.handle()
+@TodayRaceHandler.handle()
 async def TodyRaceHandleFunction():
     await NowcoderRaceHandler.finish(
         "今日比赛：\n" + gen_message(await fetchTodayRaces())
+    )
+
+AllRaceHandler = on_command("近期比赛")
+
+
+@AllRaceHandler.handle()
+async def AllRaceHandlFunction():
+    await NowcoderRaceHandler.finish(
+        "近期比赛：\n" + gen_message(await fetchAllRaces())
     )
