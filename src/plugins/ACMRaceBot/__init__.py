@@ -76,8 +76,11 @@ CodeforcesUserInfoHandler = on_command("cf")
 async def CodeforcesUserInfohandleFunction(args: Message = CommandArg()):
     if username := args.extract_plain_text():
         users = await fetchCodeforcesUserInfo([username])
-        pic = await genCodeforcesUserProlfile(users[0], 114514)
-        await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))
+        if users:
+            pic = await genCodeforcesUserProlfile(users[0], 114514)
+            await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))
+        else:
+            await CodeforcesUserInfoHandler.finish("没有找到这个用户，是不是打错名字了？")
     else:
         await CodeforcesUserInfoHandler.finish("请输入用户名")
 

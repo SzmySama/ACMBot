@@ -21,13 +21,16 @@ from nonebot_plugin_htmlrender import (  # type: ignore[import-untyped] # noqa: 
 
 
 async def getCodeforcesUserSolvedNumber(handle: str) -> int:
-    url = f"https://codeforces.com/profile/{handle}"
-    response = requests.get(url).text
-    tree: etree._Element = etree.HTML(response, None)
-    result: list[etree._Element] = tree.xpath(
-        "//div[@class='_UserActivityFrame_footer']/div/div/div/text()")
-    target: str = str(result[0])
-    return int(target.split(" ")[0])
+    try:
+        url = f"https://codeforces.com/profile/{handle}"
+        response = requests.get(url).text
+        tree: etree._Element = etree.HTML(response, None)
+        result: list[etree._Element] = tree.xpath(
+            "//div[@class='_UserActivityFrame_footer']/div/div/div/text()")
+        target: str = str(result[0])
+        return int(target.split(" ")[0])
+    finally:
+        return 0
 
 
 async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
@@ -94,9 +97,10 @@ async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
     if json_data is None:
         logger.error("请求失败")
     else:
-        for i in json_data["result"]:
-            output.append(
-                UserInfo(i["handle"], i["rating"], await getCodeforcesUserSolvedNumber(i["handle"]), i["avatar"]))
+        if json_data["status"] == "OK":
+            for i in json_data["result"]:
+                output.append(
+                    UserInfo(i["handle"], i.get("rating") or 0, await getCodeforcesUserSolvedNumber(i["handle"]), i["avatar"]))
 
     return output
 
