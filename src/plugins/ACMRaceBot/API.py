@@ -222,3 +222,17 @@ async def fetchTodayRaces() -> list[RaceInfo]:
             print(f"Error fetching races: {e}")
 
     return races
+
+
+async def fetchAllRaces() -> list[RaceInfo]:
+    races: list[RaceInfo] = []
+    tasks = [fetchAtcoderRaces(), fetchCodeforcesRaces(), fetchNowcoderRaces()]
+    for task in asyncio.as_completed(tasks):
+        try:
+            result = await task
+            for i in result:
+                races.append(i)
+        except Exception as e:
+            print(f"Error fetching races: {e}")
+
+    return races
