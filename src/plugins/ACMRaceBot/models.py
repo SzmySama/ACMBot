@@ -16,20 +16,20 @@ class RaceInfo:
 class UserInfo:
     nickname: str
     rating: int
-    rank: int
+    solved: int
     headLogoURL: str
 
-    def __init__(self, nickname: str, rating: int, rank: int, headLogoURL: str) -> None:
+    def __init__(self, nickname: str, rating: int, solved: int, headLogoURL: str) -> None:
         self.nickname = nickname
         self.rating = rating
-        self.rank = rank
+        self.solved = solved
         self.headLogoURL = headLogoURL
 
 
 class UserProfileModel(BaseModel):
     headLogoURL: str
     username: str
-    rank: str
+    solved: int
     rating: int
 
     @property

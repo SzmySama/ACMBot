@@ -1,5 +1,4 @@
 from nonebot import get_plugin_config, on_command
-import nonebot
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.params import CommandArg
@@ -11,6 +10,7 @@ from .API import (
     fetchCodeforcesUserInfo,
     fetchNowcoderRaces,
     fetchTodayRaces,
+    fetchAllRaces,
     genCodeforcesUserProlfile,
 )
 from .config import Config
@@ -77,17 +77,29 @@ CodeforcesUserInfoHandler = on_command("cf")
 async def CodeforcesUserInfohandleFunction(args: Message = CommandArg()):
     if username := args.extract_plain_text():
         users = await fetchCodeforcesUserInfo([username])
-        pic = await genCodeforcesUserProlfile(users[0], 114514)
-        await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))
+        if users:
+            pic = await genCodeforcesUserProlfile(users[0], 114514)
+            await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))
+        else:
+            await CodeforcesUserInfoHandler.finish("没有找到这个用户，是不是打错名字了？")
     else:
         await CodeforcesUserInfoHandler.finish("请输入用户名")
 
 
-TodyRaceHandler = on_command("今日比赛")
+TodayRaceHandler = on_command("今日比赛")
 
 
-@TodyRaceHandler.handle()
+@TodayRaceHandler.handle()
 async def TodyRaceHandleFunction():
     await NowcoderRaceHandler.finish(
         "今日比赛：\n" + gen_message(await fetchTodayRaces())
+    )
+
+AllRaceHandler = on_command("近期比赛")
+
+
+@AllRaceHandler.handle()
+async def AllRaceHandlFunction():
+    await NowcoderRaceHandler.finish(
+        "近期比赛：\n" + gen_message(await fetchAllRaces())
     )
