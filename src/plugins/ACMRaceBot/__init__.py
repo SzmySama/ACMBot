@@ -78,7 +78,7 @@ async def CodeforcesUserInfohandleFunction(args: Message = CommandArg()):
     if username := args.extract_plain_text():
         users = await fetchCodeforcesUserInfo([username])
         if users:
-            pic = await genCodeforcesUserProlfile(users[0], 114514)
+            pic = await genCodeforcesUserProlfile(users[0])
             await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))
         else:
             await CodeforcesUserInfoHandler.finish("没有找到这个用户，是不是打错名字了？")

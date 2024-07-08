@@ -33,7 +33,7 @@ async def getCodeforcesUserSolvedNumber(handle: str) -> int:
         return 0
 
 
-async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
+async def genCodeforcesUserProlfile(p: UserInfo) -> bytes:
     from pathlib import Path
 
     template_path = str(Path(__file__).parent / "templates")
