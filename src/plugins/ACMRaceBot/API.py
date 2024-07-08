@@ -195,7 +195,8 @@ async def fetchNowcoderRaces() -> list[RaceInfo]:
             output.append(
                 RaceInfo(
                     title=title,
-                    start_time=arrow.get(start_time_str),
+                    start_time=arrow.get(
+                        start_time_str, tzinfo=arrow.now().tzinfo),
                     url=url,
                     duration_minutes=int(keep_time_str) * 60,
                 )
