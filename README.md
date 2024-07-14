@@ -62,10 +62,14 @@ nb run
 
 
 ## 配置
-请在本项目下创建`.env`文件，添加`ACM__Codeforces__secret`和`ACM_Codeforces__key`，否则可能不能使用codeforces
+请创建`.env`文件，以下是默认配置，请复制你需要修改的选项填写到.env文件内中哦:
+``` toml
+acm_cf_key = ""
+acm_cf_secret = ""
 
-例如
-```prod
-ACM__Codeforces__secret=xxx
-ACM__Codeforces__key=xxx
+acm_db_host = "127.0.0.1"
+acm_db_port = 3306
+acm_db_username = "root"
+acm_db_passwd = ""
+acm_db_dbname = "ACMRaceBot"
 ```

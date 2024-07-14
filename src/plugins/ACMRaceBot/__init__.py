@@ -1,4 +1,4 @@
-from nonebot import get_plugin_config, on_command
+from nonebot import get_plugin_config, logger, on_command
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.params import CommandArg
@@ -24,6 +24,8 @@ __plugin_meta__ = PluginMetadata(
 )
 
 config = get_plugin_config(Config)
+
+logger.debug(config)
 
 
 def gen_message(data: list[RaceInfo]) -> str:
