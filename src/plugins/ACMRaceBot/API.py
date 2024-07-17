@@ -6,18 +6,20 @@ import time
 from typing import Any
 
 import arrow
-import nonebot
 import requests
 from lxml import etree
+from .config import Config
 
 # fmt: off
-from nonebot import logger, require
+from nonebot import get_plugin_config, logger, require
 from .models import RaceInfo, UserInfo, UserProfileModel
 require("nonebot_plugin_htmlrender")
 from nonebot_plugin_htmlrender import (  # type: ignore[import-untyped] # noqa: E402 
     template_to_pic,
 )
 # fmt: on
+
+config = get_plugin_config(Config)
 
 
 async def getCodeforcesUserSolvedNumber(handle: str) -> int:
@@ -29,11 +31,11 @@ async def getCodeforcesUserSolvedNumber(handle: str) -> int:
             "//div[@class='_UserActivityFrame_footer']/div/div/div/text()")
         target: str = str(result[0])
         return int(target.split(" ")[0])
-    finally:
+    except Exception:
         return 0
 
 
-async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
+async def genCodeforcesUserProlfile(p: UserInfo) -> bytes:
     from pathlib import Path
 
     template_path = str(Path(__file__).parent / "templates")
@@ -55,14 +57,9 @@ async def genCodeforcesUserProlfile(p: UserInfo, userNumber: int) -> bytes:
 
 
 async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | None:
-    config = nonebot.get_driver().config
-    key = config.acm["codeforces"]["key"]
-    secret = config.acm["codeforces"]["secret"]
-    logger.info(key)
-    logger.info(secret)
     api_url = "https://codeforces.com/api/"
     all_arguments = {
-        "apiKey": key,
+        "apiKey": config.acm_cf_key,
         "time": str(int(time.time())),
         # 其他参数
         **args,
@@ -78,7 +75,7 @@ async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | No
         hash_source += f"{k}={v}&"
         api_fullurl += f"{k}={v}&"
     hash_source = hash_source[:-1] + "#"
-    hash_source += secret
+    hash_source += config.acm_cf_secret
 
     hash_sig = hashlib.sha512(hash_source.encode("utf-8")).hexdigest()
     api_fullurl += f"apiSig={rand_str}{hash_sig}"
@@ -195,7 +192,8 @@ async def fetchNowcoderRaces() -> list[RaceInfo]:
             output.append(
                 RaceInfo(
                     title=title,
-                    start_time=arrow.get(start_time_str),
+                    start_time=arrow.get(
+                        start_time_str, tzinfo=arrow.now().tzinfo),
                     url=url,
                     duration_minutes=int(keep_time_str) * 60,
                 )
