@@ -162,4 +162,5 @@ cython_debug/
 #.idea/
 pdm.lock
 
+.vscode/
 bot.py

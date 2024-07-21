@@ -205,16 +205,12 @@ async def fetchNowcoderRaces() -> list[RaceInfo]:
 async def fetchTodayRaces() -> list[RaceInfo]:
     races: list[RaceInfo] = []
     tasks = [fetchAtcoderRaces(), fetchCodeforcesRaces(), fetchNowcoderRaces()]
-    current_time = time.localtime()
+    current_time = arrow.now().date()
     for task in asyncio.as_completed(tasks):
         try:
             result = await task
             for i in result:
-                if (
-                    i.start_time.tm_year == current_time.tm_year
-                    and i.start_time.tm_mon == current_time.tm_mon
-                    and i.start_time.tm_mday == current_time.tm_mday
-                ):
+                if i.start_time.date() == current_time:
                     races.append(i)
         except Exception as e:
             print(f"Error fetching races: {e}")
