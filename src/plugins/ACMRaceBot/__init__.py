@@ -32,12 +32,12 @@ def gen_message(data: list[RaceInfo]) -> str:
     output = ""
     for i in data:
         minutes = i.duration_minutes % 60
-        output += f"{i.title}\n"
-        output += f"开始时间：{i.start_time.to(
-            "Asia/Shanghai").format('YYYY-MM-DD HH:mm:ss')}\n"
-        output += f"比赛时长：{int(i.duration_minutes / 60)
-                          }小时{f"{minutes}分钟" if minutes > 0 else ""}\n"
-        output += f"传送门->：{i.url}\n\n"
+        output += (f"{i.title}\n"
+                   f"开始时间：{i.start_time.to(
+                       'Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}\n"
+                   f"比赛时长：{int(i.duration_minutes / 60)}小时"
+                   f"{f'{minutes}分钟' if minutes > 0 else ''}\n"
+                   f"传送门->：{i.url}\n\n")
 
     return output if data else "没有获取到数据哦"
 
