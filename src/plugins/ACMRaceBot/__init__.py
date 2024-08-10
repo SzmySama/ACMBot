@@ -57,8 +57,11 @@ CodeforcesRaceHandler = on_command("近期cf")
 
 @CodeforcesRaceHandler.handle()
 async def CodeforcesRaceHandleFunction():
+    race_info = await fetchCodeforcesRaces()
+    if isinstance(race_info, Exception):
+        await CodeforcesRaceHandler.finish(str(race_info))
     await CodeforcesRaceHandler.finish(
-        "近期CodeForces：\n" + gen_message(await fetchCodeforcesRaces())
+        "近期CodeForces：\n" + gen_message(race_info)
     )
 
 
@@ -79,6 +82,8 @@ CodeforcesUserInfoHandler = on_command("cf")
 async def CodeforcesUserInfohandleFunction(args: Message = CommandArg()):
     if username := args.extract_plain_text():
         users = await fetchCodeforcesUserInfo([username])
+        if isinstance(users, Exception):
+            await CodeforcesUserInfoHandler.finish(str(users))
         if users:
             pic = await genCodeforcesUserProlfile(users[0])
             await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))

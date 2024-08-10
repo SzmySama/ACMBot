@@ -56,7 +56,7 @@ async def genCodeforcesUserProlfile(p: UserInfo) -> bytes:
     )
 
 
-async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | None:
+async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | Exception:
     api_url = "https://codeforces.com/api/"
     all_arguments = {
         "apiKey": config.acm_cf_key,
@@ -82,20 +82,24 @@ async def fetchCodeforcesAPI(api_mothed: str, args: dict[str, str]) -> dict | No
 
     response = requests.get(api_fullurl)
 
-    return response.json() if response.status_code == 200 else None
+    return response.json() if response.status_code == 200 else Exception(f"Bad Response {response.status_code}")
 
 
-async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo]:
-    json_data = await fetchCodeforcesAPI(
+async def fetchCodeforcesUserInfo(users: list[str]) -> list[UserInfo] | Exception:
+    res = await fetchCodeforcesAPI(
         "user.info", {"handles": ";".join(
             users), "checkHistoricHandles": "false"}
     )
+
+    if isinstance(res, Exception):
+        return res
+
     output = []
-    if json_data is None:
+    if res is None:
         logger.error("请求失败")
     else:
-        if json_data["status"] == "OK":
-            for i in json_data["result"]:
+        if res["status"] == "OK":
+            for i in res["result"]:
                 output.append(
                     UserInfo(i["handle"], i.get("rating") or 0, await getCodeforcesUserSolvedNumber(i["handle"]), i["avatar"]))
 
@@ -145,14 +149,18 @@ async def fetchAtcoderRaces() -> list[RaceInfo]:
     return output
 
 
-async def fetchCodeforcesRaces() -> list[RaceInfo]:
-    json_data = await fetchCodeforcesAPI("contest.list", {"gym": "false"})
+async def fetchCodeforcesRaces() -> list[RaceInfo] | Exception:
+    res = await fetchCodeforcesAPI("contest.list", {"gym": "false"})
+
+    if isinstance(res, Exception):
+        return res
+
     output = []
-    if json_data is None:
+    if res is None:
         logger.error("请求失败")
     else:
         now_time = time.time()
-        for i in json_data["result"]:
+        for i in res["result"]:
             if i["startTimeSeconds"] < now_time:
                 break
             output.append(
