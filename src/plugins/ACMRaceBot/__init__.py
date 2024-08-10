@@ -2,7 +2,6 @@ from nonebot import get_plugin_config, logger, on_command
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import MessageSegment
 from nonebot.params import CommandArg
-from nonebot.plugin import PluginMetadata
 
 from .API import (
     fetchAtcoderRaces,
@@ -16,13 +15,6 @@ from .API import (
 from .config import Config
 from .models import RaceInfo
 
-__plugin_meta__ = PluginMetadata(
-    name="hyc_race",
-    description="",
-    usage="",
-    config=Config,
-)
-
 config = get_plugin_config(Config)
 
 logger.debug(config)
@@ -32,12 +24,13 @@ def gen_message(data: list[RaceInfo]) -> str:
     output = ""
     for i in data:
         minutes = i.duration_minutes % 60
-        output += f"{i.title}\n"
-        output += f"开始时间：{i.start_time.to(
-            "Asia/Shanghai").format('YYYY-MM-DD HH:mm:ss')}\n"
-        output += f"比赛时长：{int(i.duration_minutes / 60)
-                          }小时{f"{minutes}分钟" if minutes > 0 else ""}\n"
-        output += f"传送门->：{i.url}\n\n"
+        output += f"""{i.title}
+开始时间：{i.start_time.to('Asia/Shanghai').format('YYYY-MM-DD HH:mm:ss')}
+比赛时长：{int(i.duration_minutes / 60)}小时
+{f'{minutes}分钟' if minutes > 0 else ''}
+传送门->：{i.url}
+
+"""
 
     return output if data else "没有获取到数据哦"
 
@@ -57,8 +50,11 @@ CodeforcesRaceHandler = on_command("近期cf")
 
 @CodeforcesRaceHandler.handle()
 async def CodeforcesRaceHandleFunction():
+    race_info = await fetchCodeforcesRaces()
+    if isinstance(race_info, Exception):
+        await CodeforcesRaceHandler.finish(str(race_info))
     await CodeforcesRaceHandler.finish(
-        "近期CodeForces：\n" + gen_message(await fetchCodeforcesRaces())
+        "近期CodeForces：\n" + gen_message(race_info)
     )
 
 
@@ -79,6 +75,8 @@ CodeforcesUserInfoHandler = on_command("cf")
 async def CodeforcesUserInfohandleFunction(args: Message = CommandArg()):
     if username := args.extract_plain_text():
         users = await fetchCodeforcesUserInfo([username])
+        if isinstance(users, Exception):
+            await CodeforcesUserInfoHandler.finish(str(users))
         if users:
             pic = await genCodeforcesUserProlfile(users[0])
             await CodeforcesUserInfoHandler.finish(MessageSegment.image(pic))
