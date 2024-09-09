@@ -33,7 +33,6 @@ func allRaceHandler(ctx *zero.Ctx) {
 	allRace, err := fetcher.GetAllRaces()
 	if err != nil {
 		ctx.Send("出错惹🥵: " + err.Error())
-		return
 	}
 	var result message.Message
 	for _, v := range allRace {
