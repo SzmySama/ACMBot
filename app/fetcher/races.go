@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	allRaces        AllRace
+	cacheRace       CacheRaceData
 	avilableSources = []string{
 		"牛客竞赛",
 		"洛谷",
@@ -32,7 +32,7 @@ func fetchAllRaces() error {
 		return fmt.Errorf("failed to read res body: %v", err)
 	}
 
-	if err = json.Unmarshal(body, &allRaces.Races); err != nil {
+	if err = json.Unmarshal(body, &cacheRace.Races); err != nil {
 		return fmt.Errorf("failed to unmarshal res data: %v", err)
 	}
 
@@ -40,7 +40,7 @@ func fetchAllRaces() error {
 
 	var targetRace []Race
 
-	for _, race := range allRaces.Races {
+	for _, race := range cacheRace.Races {
 		for _, raceSource := range avilableSources {
 			if race.Source == raceSource {
 				targetRace = append(targetRace, race)
@@ -49,20 +49,20 @@ func fetchAllRaces() error {
 		}
 	}
 
-	allRaces.Races = targetRace
+	cacheRace.Races = targetRace
 
-	allRaces.UpdateAt = time.Now()
+	cacheRace.UpdateAt = time.Now()
 	return nil
 }
 
 func GetAllRaces() ([]Race, error) {
-	if time.Since(allRaces.UpdateAt).Hours() > 24 {
+	if time.Since(cacheRace.UpdateAt).Hours() > 24 {
 		if err := fetchAllRaces(); err != nil {
-			return nil, err
+			return cacheRace.Races, err
 		}
-		sort.Slice(allRaces.Races, func(i, j int) bool {
-			return allRaces.Races[i].StartTime.Before(allRaces.Races[j].StartTime)
+		sort.Slice(cacheRace.Races, func(i, j int) bool {
+			return cacheRace.Races[i].StartTime.Before(cacheRace.Races[j].StartTime)
 		})
 	}
-	return allRaces.Races, nil
+	return cacheRace.Races, nil
 }

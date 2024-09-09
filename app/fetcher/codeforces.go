@@ -14,12 +14,17 @@ import (
 
 	"math/rand"
 
+	"github.com/SzmySama/ACMBot/app/model/db"
 	"github.com/SzmySama/ACMBot/app/types"
 	"github.com/SzmySama/ACMBot/app/utils/config"
 	log "github.com/sirupsen/logrus"
 )
 
-func fetchCodeforcesAPI(apiMethod string, args map[string]any) ([]map[string]any, error) {
+const (
+	SINGAL_FETCH_COUNT = 1000
+)
+
+func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
 	apiURL := "https://codeforces.com/api/"
 	cfg := config.GetConfig().Codeforces
 
@@ -28,7 +33,7 @@ func fetchCodeforcesAPI(apiMethod string, args map[string]any) ([]map[string]any
 
 	var sortedArgs []string
 	for k, v := range args {
-		sortedArgs = append(sortedArgs, fmt.Sprintf("%s=%s", k, v))
+		sortedArgs = append(sortedArgs, fmt.Sprintf("%v=%v", k, v))
 	}
 	sort.Strings(sortedArgs)
 
@@ -58,7 +63,7 @@ func fetchCodeforcesAPI(apiMethod string, args map[string]any) ([]map[string]any
 		return nil, err
 	}
 
-	var res codeforcesResponse
+	var res codeforcesResponse[T]
 	if err := json.Unmarshal([]byte(body), &res); err != nil {
 		return nil, err
 	}
@@ -68,56 +73,74 @@ func fetchCodeforcesAPI(apiMethod string, args map[string]any) ([]map[string]any
 		return nil, fmt.Errorf(res.Comment)
 	}
 
-	return res.Result, nil
+	return &res.Result, nil
 }
 
-func FetchCodeforcesUsersInfo(handles []string) (user []types.User, err error) {
-	var result []map[string]any
-	result, err = fetchCodeforcesAPI("user.info", map[string]any{
+func FetchCodeforcesUsersInfo(handles []string) (user *[]types.User, err error) {
+	return fetchCodeforcesAPI[[]types.User]("user.info", map[string]any{
 		"handles":              strings.Join(handles, ";"),
 		"checkHistoricHandles": "false",
 	})
-	if err != nil {
-		return
-	}
-	var json_result []byte
-
-	for _, v := range result {
-		var currect_user types.User
-
-		json_result, err = json.Marshal(v)
-		if err != nil {
-			return
-		}
-		log.Infof(string(json_result))
-		if err = json.Unmarshal(json_result, &currect_user); err != nil {
-			return
-		}
-		user = append(user, currect_user)
-	}
-	return
 }
 
-// func FetchCodeforcesUserSubmissionsUntil(handle string, until time.Time) ([]types.Submission, error) {
-// 	// 获取的提交记录是按照时间排序的，靠近现在的排在前面
+func UpdateCodeforcesUserSubmission(handle string) error {
+	/*
+		1. 获取用户，不存在则返回
+		2. 获取Submissions的更新时间
+		3. fetch用户的提交记录，更新数据库相关数据
+	*/
+	db := db.GetDBConnection()
+	var user types.User
+	result := db.Where("handle = ?", handle).First(&user)
+	if result.Error != nil {
+		return result.Error
+	}
+	// fetch
 
-// 	const SUBMISSION_COUNT = 1000
-// 	var result []types.Submission
-// 	var lastTime time.Time
+	var fetchCount = 1
+	var newSubmissions []types.Submission
+	var currectLastSubmissionTimeStamp time.Time
 
-// 	fetchSubmission := func(from int) ([]types.Submission, error) {
-// 		res, err := fetchCodeforcesAPI("user.status", map[string]any{
-// 			"handle": handle,
-// 			"from":   from,
-// 			"count":  SUBMISSION_COUNT,
-// 		})
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		return res, err
-// 	}
+	for {
+		res, err := fetchCodeforcesAPI[[]types.Submission]("user.status", map[string]any{
+			"handle": handle,
+			"from":   fetchCount,
+			"count":  SINGAL_FETCH_COUNT,
+		})
+		if err != nil {
+			return err
+		}
+		if len(*res) == 0 {
+			break
+		}
+		currectLastSubmissionTimeStamp = (*res)[len(*res)-1].At
 
-// 	for {
+		if currectLastSubmissionTimeStamp.Sub(user.SubmissionUpdatedAt).Seconds() > 0 {
+			// 当前获取到的数据和原始数据没有交集
+			newSubmissions = append(newSubmissions, *res...)
+			fetchCount += SINGAL_FETCH_COUNT
+			continue
+		} else {
+			for _, v := range *res {
+				if v.At.Sub(user.SubmissionUpdatedAt).Seconds() <= 0 {
+					break
+				}
+				newSubmissions = append(newSubmissions, v)
+			}
+			break
+		}
+	}
 
-// 	}
-// }
+	for _, v := range newSubmissions {
+		if v.Status == types.SUBMISSION_STATUS_OK {
+			user.Solved++
+		}
+	}
+
+	user.Submissions = append(newSubmissions, user.Submissions...)
+	user.SubmissionUpdatedAt = user.Submissions[0].At
+	log.Infof("%v", user.Submissions)
+	// 更新数据库数据
+	db.Save(&user)
+	return nil
+}

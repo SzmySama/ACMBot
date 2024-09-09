@@ -25,3 +25,5 @@ go.work.sum
 .env
 
 conf.toml
+.VSCodeCounter
+_*

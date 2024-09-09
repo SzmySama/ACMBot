@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-type codeforcesResponse struct {
-	Status  string           `json:"status"`
-	Result  []map[string]any `json:"result"`
-	Comment string           `json:"comment"`
+type codeforcesResponse[T any] struct {
+	Status  string `json:"status"`
+	Result  T      `json:"result"`
+	Comment string `json:"comment"`
 }
 
 type Race struct {
@@ -19,7 +19,7 @@ type Race struct {
 	EndTime   time.Time `json:"end_time"`
 }
 
-type AllRace struct {
+type CacheRaceData struct {
 	Races    []Race
 	UpdateAt time.Time
 }
@@ -33,7 +33,8 @@ func (r *Race) String() string {
 		dStr = fmt.Sprintf("%d小时", h)
 	}
 	return fmt.Sprintf(
-		"比赛来源: %s\n"+
+		""+
+			"比赛来源: %s\n"+
 			"比赛名称: %s\n"+
 			"开始时间: %s\n"+
 			"持续时间: %s\n"+

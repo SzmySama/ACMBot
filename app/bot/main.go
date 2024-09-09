@@ -60,7 +60,7 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 		}
 		ctx.Send([]message.MessageSegment{message.ImageBytes(data)})
 	}
-	for _, user := range users {
+	for _, user := range *users {
 		go geneAndSend(user)
 	}
 }

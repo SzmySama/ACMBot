@@ -72,7 +72,7 @@ func InitDB(autoCreate bool) error {
 }
 
 func Migrate() error {
-	err := db.AutoMigrate(&types.User{}, &types.Problem{}, &types.Submission{}, &types.RatingChange{})
+	err := db.AutoMigrate(&types.User{})
 	if err != nil {
 		return fmt.Errorf("failed to migrate DB: %w", err)
 	}
