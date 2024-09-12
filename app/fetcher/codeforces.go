@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	SINGAL_FETCH_COUNT = 1000
+	SINGAL_FETCH_COUNT = 100
 )
 
 func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
@@ -76,14 +76,28 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error
 	return &res.Result, nil
 }
 
-func FetchCodeforcesUsersInfo(handles []string) (user *[]types.User, err error) {
+func FetchCodeforcesUsersInfo(handles []string, checkHistoricHandles bool) (user *[]types.User, err error) {
 	return fetchCodeforcesAPI[[]types.User]("user.info", map[string]any{
 		"handles":              strings.Join(handles, ";"),
-		"checkHistoricHandles": "false",
+		"checkHistoricHandles": checkHistoricHandles,
 	})
 }
 
-func UpdateCodeforcesUserSubmission(handle string) error {
+func FetchCodeforcesUserSubmissions(handle string, from, count int) (*[]types.Submission, error) {
+	return fetchCodeforcesAPI[[]types.Submission]("user.status", map[string]any{
+		"handle": handle,
+		"from":   from,
+		"count":  count,
+	})
+}
+
+func FetchCodeforcesUserRatingChanges(handle string) (*[]types.RatingChange, error) {
+	return fetchCodeforcesAPI[[]types.RatingChange]("user.rating", map[string]any{
+		"handle": handle,
+	})
+}
+
+func UpdateCodeforcesUserSubmissions(handle string) error {
 	/*
 		1. 获取用户，不存在则返回
 		2. 获取Submissions的更新时间
@@ -91,9 +105,8 @@ func UpdateCodeforcesUserSubmission(handle string) error {
 	*/
 	db := db.GetDBConnection()
 	var user types.User
-	result := db.Where("handle = ?", handle).First(&user)
-	if result.Error != nil {
-		return result.Error
+	if result := db.Where("handle = ?", handle).First(&user); result.Error != nil {
+		return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
 	}
 	// fetch
 
@@ -102,11 +115,7 @@ func UpdateCodeforcesUserSubmission(handle string) error {
 	var currectLastSubmissionTimeStamp time.Time
 
 	for {
-		res, err := fetchCodeforcesAPI[[]types.Submission]("user.status", map[string]any{
-			"handle": handle,
-			"from":   fetchCount,
-			"count":  SINGAL_FETCH_COUNT,
-		})
+		res, err := FetchCodeforcesUserSubmissions(handle, fetchCount, SINGAL_FETCH_COUNT)
 		if err != nil {
 			return err
 		}
@@ -141,6 +150,29 @@ func UpdateCodeforcesUserSubmission(handle string) error {
 	user.SubmissionUpdatedAt = user.Submissions[0].At
 	log.Infof("%v", user.Submissions)
 	// 更新数据库数据
-	db.Save(&user)
+	if err := db.Save(&user).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateCodeforcesUserRatingChanges(handle string) error {
+	db := db.GetDBConnection()
+	var user types.User
+	if result := db.Where("handle = ?", handle).First(&user); result.Error != nil {
+		return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
+	}
+
+	ratingChanges, err := FetchCodeforcesUserRatingChanges(handle)
+	if err != nil {
+		return err
+	}
+	user.RatingChanges = *ratingChanges
+	if length := len(*ratingChanges); length > 0 {
+		user.RatingChangeUpdateAt = user.RatingChanges[length-1].At
+	}
+	if err := db.Save(&user).Error; err != nil {
+		return err
+	}
 	return nil
 }

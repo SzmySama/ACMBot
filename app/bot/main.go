@@ -43,7 +43,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 
 func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	users, err := fetcher.FetchCodeforcesUsersInfo(handles)
+	users, err := fetcher.FetchCodeforcesUsersInfo(handles, false)
 	if err != nil {
 		ctx.Send("没有找到这位用户🥵: " + err.Error())
 		return
@@ -64,9 +64,28 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 	}
 }
 
-func Start() {
+func codeforcesRaceHandler(ctx *zero.Ctx) {
+	allRace, err := fetcher.GetAllRaces()
+	if err != nil {
+		ctx.Send("出错惹🥵: " + err.Error())
+	}
+	var result message.Message
+	for _, v := range allRace {
+		if v.Source == "Codeforces" {
+			result = append(result, message.CustomNode("", 0, v.String()))
+		}
+	}
+	ctx.Send(result)
+}
+
+func init() {
 	zero.OnCommand("近期比赛").Handle(allRaceHandler)
+	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
+
 	zero.OnCommand("cf").Handle(codeforcesUserProfileHandler)
 
+}
+
+func Start() {
 	zero.RunAndBlock(&zeroCfg, nil)
 }
