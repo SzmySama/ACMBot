@@ -52,20 +52,28 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 		ctx.Send("发这么多会坏掉的🥰")
 		return
 	}
-	users, err := fetcher.FetchCodeforcesUsersInfo(handles, false)
-	if err != nil {
-		ctx.Send("没有找到这位用户🥵: " + err.Error())
-		return
-	}
-	geneAndSend := func(user types.User) {
+	geneAndSend := func(handle string) {
+		if err := fetcher.UpdateCodeforcesUserSubmissions(handle); err != nil {
+			ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
+			return
+		}
+
+		var user types.User
+
+		if err := db.GetDBConnection().Where("handle = ?", handle).First(&user).Error; err != nil {
+			ctx.Send(fmt.Sprintf("DB Err😭: %v", err))
+			return
+		}
+
 		data, err := render.CodeforcesUserProfile(user)
 		if err != nil {
 			ctx.Send("正在生成" + user.Handle + "的卡片，但是出错惹🥵: " + err.Error())
+			return
 		}
 		ctx.Send([]message.MessageSegment{message.ImageBytes(data)})
 	}
-	for _, user := range *users {
-		go geneAndSend(user)
+	for _, handle := range handles {
+		go geneAndSend(handle)
 	}
 }
 

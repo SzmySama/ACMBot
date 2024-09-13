@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	SINGAL_FETCH_COUNT = 100
+	SINGAL_FETCH_COUNT = 500
 )
 
 func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
@@ -163,7 +163,7 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 
 	user.Submissions = append(newSubmissions, user.Submissions...)
 	user.SubmissionUpdatedAt = time.Now()
-	log.Infof("%v", user.Submissions)
+	// log.Infof("%v", user.Submissions)
 	// 更新数据库数据
 	if err := db.Save(&user).Error; err != nil {
 		return err

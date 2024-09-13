@@ -35,9 +35,8 @@ type User struct {
 	FriendOf  int       `json:"friendOfCount"`
 	CreatedAt time.Time `json:"-"`
 
-	Submissions           []Submission `gorm:"serializer:json"`
-	SubmissionUpdatedAt   time.Time
-	PassedSubmissionCount int32
+	Submissions         []Submission `gorm:"serializer:json"`
+	SubmissionUpdatedAt time.Time
 
 	RatingChanges        []RatingChange `gorm:"serializer:json"`
 	RatingChangeUpdateAt time.Time
