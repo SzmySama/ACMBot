@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/SzmySama/ACMBot/app/fetcher"
+	"github.com/SzmySama/ACMBot/app/model/db"
 	"github.com/SzmySama/ACMBot/app/render"
 	"github.com/SzmySama/ACMBot/app/types"
 	"github.com/SzmySama/ACMBot/app/utils/config"
@@ -12,6 +13,10 @@ import (
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
 	"github.com/wdvxdr1123/ZeroBot/message"
+)
+
+const (
+	QUERY_LIMIT = 3
 )
 
 var (
@@ -32,7 +37,7 @@ var (
 func allRaceHandler(ctx *zero.Ctx) {
 	allRace, err := fetcher.GetAllRaces()
 	if err != nil {
-		ctx.Send("出错惹🥵: " + err.Error())
+		ctx.Send("出错惹🥹: " + err.Error())
 	}
 	var result message.Message
 	for _, v := range allRace {
@@ -43,17 +48,17 @@ func allRaceHandler(ctx *zero.Ctx) {
 
 func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
+	if len(handles) > QUERY_LIMIT {
+		ctx.Send("发这么多会坏掉的🥰")
+		return
+	}
 	users, err := fetcher.FetchCodeforcesUsersInfo(handles, false)
 	if err != nil {
 		ctx.Send("没有找到这位用户🥵: " + err.Error())
 		return
 	}
-	logrus.Infof("%v", users)
 	geneAndSend := func(user types.User) {
-		data, err := render.CodeforcesUserProfile(render.CodeforcesUserProfileData{
-			User:  user,
-			Level: render.ConvertRatingToLevel(user.Rating),
-		})
+		data, err := render.CodeforcesUserProfile(user)
 		if err != nil {
 			ctx.Send("正在生成" + user.Handle + "的卡片，但是出错惹🥵: " + err.Error())
 		}
@@ -61,6 +66,45 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 	}
 	for _, user := range *users {
 		go geneAndSend(user)
+	}
+}
+
+func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
+	handles := strings.Split(ctx.MessageString(), " ")[1:]
+	if len(handles) > QUERY_LIMIT {
+		ctx.Send("发这么多会坏掉的🥰")
+		return
+	}
+	db := db.GetDBConnection()
+	genAndSend := func(handle string) {
+		if err := fetcher.UpdateCodeforcesUserRatingChanges(handle); err != nil {
+			ctx.Send(fmt.Sprintf("没有查到%s🥺: %v", handle, err))
+			logrus.Warnf("没有查到%s🥺: %v", handle, err)
+			return
+		}
+		var user types.User
+		if err := db.Where("handle = ?", handle).First(&user).Error; err != nil {
+			ctx.Send(fmt.Sprintf("DB Err😭: %v", err))
+			logrus.Warnf("DB Err😭: %v", err)
+			return
+		}
+
+		if len(user.RatingChanges) <= 0 {
+			ctx.Send(handle + "貌似还没打过比赛")
+			return
+		}
+
+		img_data, err := render.CodeforcesRatingChanges(user.RatingChanges, handle)
+		if err != nil {
+			ctx.Send(fmt.Sprintf("render err😰: %v", err))
+			logrus.Warnf("render err😰: %v", err)
+			return
+		}
+		ctx.Send([]message.MessageSegment{message.ImageBytes(img_data)})
+	}
+
+	for _, i := range handles {
+		genAndSend(i)
 	}
 }
 
@@ -81,6 +125,7 @@ func codeforcesRaceHandler(ctx *zero.Ctx) {
 func init() {
 	zero.OnCommand("近期比赛").Handle(allRaceHandler)
 	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
+	zero.OnCommand("rating").Handle(codeforcesRatingChangeHandler)
 
 	zero.OnCommand("cf").Handle(codeforcesUserProfileHandler)
 

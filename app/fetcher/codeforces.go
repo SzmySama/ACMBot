@@ -4,6 +4,7 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,7 @@ import (
 	"github.com/SzmySama/ACMBot/app/types"
 	"github.com/SzmySama/ACMBot/app/utils/config"
 	log "github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 const (
@@ -106,9 +108,22 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 	db := db.GetDBConnection()
 	var user types.User
 	if result := db.Where("handle = ?", handle).First(&user); result.Error != nil {
-		return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			if err := UpdateCodeforcesUserInfo(handle); err != nil {
+				return err
+			}
+			if err := db.Where("handle = ?", handle).First(&user).Error; err != nil {
+				return fmt.Errorf("panic err while fetch user: Unexpected brach: %v", err)
+			}
+		} else {
+			return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
+		}
 	}
 	// fetch
+
+	if time.Since(user.SubmissionUpdatedAt).Hours() <= 24 {
+		return nil
+	}
 
 	var fetchCount = 1
 	var newSubmissions []types.Submission
@@ -147,7 +162,7 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 	}
 
 	user.Submissions = append(newSubmissions, user.Submissions...)
-	user.SubmissionUpdatedAt = user.Submissions[0].At
+	user.SubmissionUpdatedAt = time.Now()
 	log.Infof("%v", user.Submissions)
 	// 更新数据库数据
 	if err := db.Save(&user).Error; err != nil {
@@ -160,7 +175,22 @@ func UpdateCodeforcesUserRatingChanges(handle string) error {
 	db := db.GetDBConnection()
 	var user types.User
 	if result := db.Where("handle = ?", handle).First(&user); result.Error != nil {
-		return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			if err := UpdateCodeforcesUserInfo(handle); err != nil {
+				return err
+			}
+
+			if err := db.Where("handle = ?", handle).First(&user).Error; err != nil {
+				return fmt.Errorf("panic err while fetch user: Unexpected brach: %v", err)
+			}
+
+		} else {
+			return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
+		}
+	}
+
+	if time.Since(user.RatingChangeUpdateAt) <= 30*time.Minute {
+		return nil
 	}
 
 	ratingChanges, err := FetchCodeforcesUserRatingChanges(handle)
@@ -169,10 +199,18 @@ func UpdateCodeforcesUserRatingChanges(handle string) error {
 	}
 	user.RatingChanges = *ratingChanges
 	if length := len(*ratingChanges); length > 0 {
-		user.RatingChangeUpdateAt = user.RatingChanges[length-1].At
+		user.RatingChangeUpdateAt = time.Now()
 	}
 	if err := db.Save(&user).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+func UpdateCodeforcesUserInfo(handle string) error {
+	user, err := FetchCodeforcesUsersInfo([]string{handle}, false)
+	if err != nil {
+		return fmt.Errorf("failed to update cf user: %v", err)
+	}
+	return db.GetDBConnection().Save(&((*user)[0])).Error
 }

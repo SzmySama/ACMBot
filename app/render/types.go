@@ -15,22 +15,26 @@ type CodeforcesUserProfileData struct {
 	Level codeforcesRatingLevel
 }
 
+type CodeforcesRatingChangesData struct {
+	RatingChangesMetaData []types.RatingChange
+	Handle                string
+}
+
 type codeforcesRatingLevel string
 
-const (
-	CodeforcesRatingLevelNewbie                   codeforcesRatingLevel = "newbie"
-	CodeforcesRatingLevelPupil                    codeforcesRatingLevel = "pupil"
-	CodeforcesRatingLevelSpecialist               codeforcesRatingLevel = "specialist"
-	CodeforcesRatingLevelExpert                   codeforcesRatingLevel = "expert"
-	CodeforcesRatingLevelCandidateMaster          codeforcesRatingLevel = "candidate-master"
-	CodeforcesRatingLevelMaster                   codeforcesRatingLevel = "master"
-	CodeforcesRatingLevelInternationalMaster      codeforcesRatingLevel = "international-master"
-	CodeforcesRatingLevelGrandmaster              codeforcesRatingLevel = "grandmaster"
-	CodeforcesRatingLevelInternationalGrandmaster codeforcesRatingLevel = "international-grandmaster"
-	CodeforcesRatingLevelLegendaryGrandmaster     codeforcesRatingLevel = "legendary-grandmaster"
-)
-
 func ConvertRatingToLevel(rating int) codeforcesRatingLevel {
+	const (
+		CodeforcesRatingLevelNewbie                   codeforcesRatingLevel = "newbie"
+		CodeforcesRatingLevelPupil                    codeforcesRatingLevel = "pupil"
+		CodeforcesRatingLevelSpecialist               codeforcesRatingLevel = "specialist"
+		CodeforcesRatingLevelExpert                   codeforcesRatingLevel = "expert"
+		CodeforcesRatingLevelCandidateMaster          codeforcesRatingLevel = "candidate-master"
+		CodeforcesRatingLevelMaster                   codeforcesRatingLevel = "master"
+		CodeforcesRatingLevelInternationalMaster      codeforcesRatingLevel = "international-master"
+		CodeforcesRatingLevelGrandmaster              codeforcesRatingLevel = "grandmaster"
+		CodeforcesRatingLevelInternationalGrandmaster codeforcesRatingLevel = "international-grandmaster"
+		CodeforcesRatingLevelLegendaryGrandmaster     codeforcesRatingLevel = "legendary-grandmaster"
+	)
 	switch {
 	case rating < 1200:
 		return CodeforcesRatingLevelNewbie

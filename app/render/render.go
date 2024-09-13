@@ -8,6 +8,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/SzmySama/ACMBot/app/types"
 	"github.com/playwright-community/playwright-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -15,11 +16,15 @@ import (
 const ()
 
 var (
-	_FULL_TEMPLATE_PATH           string
-	codeforcesUserProfileTemplate *template.Template
+	_FULL_TEMPLATE_PATH            string
+	codeforcesUserProfileTemplate  *template.Template
+	codeforcesRatingChangeTemplate *template.Template
+)
 
-	_TEMPLATE_PATH                    = "app/templates/"
-	codeforcesUserProfileTemplatePath = _TEMPLATE_PATH + "codeforces_profile.html"
+const (
+	_TEMPLATE_PATH                          = "app/templates/"
+	CODEFORCES_USER_PROFILE_TEMPLATE_PATH   = _TEMPLATE_PATH + "codeforces_profile.html"
+	CODEFORCES_RATING_CHANGES_TEMPLATE_PATH = _TEMPLATE_PATH + "codeforces_rating_change.html"
 )
 
 func init() {
@@ -29,11 +34,18 @@ func init() {
 	}
 	_FULL_TEMPLATE_PATH = path.Dir(execPath + "/" + _TEMPLATE_PATH)
 	log.Infof(_FULL_TEMPLATE_PATH)
-	codeforcesUserProfileTemplate, err = template.ParseFiles(codeforcesUserProfileTemplatePath)
-	if err != nil {
-		log.Fatalf("Failed to load template %s: %v", codeforcesUserProfileTemplatePath, err)
+
+	template_map := map[**template.Template]string{
+		&codeforcesUserProfileTemplate:  CODEFORCES_USER_PROFILE_TEMPLATE_PATH,
+		&codeforcesRatingChangeTemplate: CODEFORCES_RATING_CHANGES_TEMPLATE_PATH,
 	}
 
+	for k, v := range template_map {
+		*k, err = template.ParseFiles(v)
+		if err != nil {
+			log.Fatalf("Failed to load template %s: %v", v, err)
+		}
+	}
 }
 
 func Html(PageOpt *playwright.BrowserNewPageOptions, HTMLOpt *RenderHTMLOptions) ([]byte, error) {
@@ -56,9 +68,12 @@ func Html(PageOpt *playwright.BrowserNewPageOptions, HTMLOpt *RenderHTMLOptions)
 	})
 }
 
-func CodeforcesUserProfile(data CodeforcesUserProfileData) ([]byte, error) {
+func CodeforcesUserProfile(user types.User) ([]byte, error) {
 	var buffer bytes.Buffer
-	if err := codeforcesUserProfileTemplate.Execute(&buffer, data); err != nil {
+	if err := codeforcesUserProfileTemplate.Execute(&buffer, CodeforcesUserProfileData{
+		User:  user,
+		Level: ConvertRatingToLevel(user.Rating),
+	}); err != nil {
 		return nil, fmt.Errorf("failed to execute template: %v", err)
 	}
 	return Html(
@@ -71,5 +86,28 @@ func CodeforcesUserProfile(data CodeforcesUserProfileData) ([]byte, error) {
 		}, &RenderHTMLOptions{
 			Path: _FULL_TEMPLATE_PATH,
 			HTML: buffer.String(),
-		})
+		},
+	)
+}
+
+func CodeforcesRatingChanges(ratingChanges []types.RatingChange, handle string) ([]byte, error) {
+	var buffer bytes.Buffer
+	if err := codeforcesRatingChangeTemplate.Execute(&buffer, CodeforcesRatingChangesData{
+		RatingChangesMetaData: ratingChanges,
+		Handle:                handle,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to execute template: %v", err)
+	}
+	return Html(
+		&playwright.BrowserNewPageOptions{
+			DeviceScaleFactor: &[]float64{2.0}[0],
+			Viewport: &playwright.Size{
+				Width:  1000,
+				Height: 500,
+			},
+		}, &RenderHTMLOptions{
+			Path: _FULL_TEMPLATE_PATH,
+			HTML: buffer.String(),
+		},
+	)
 }

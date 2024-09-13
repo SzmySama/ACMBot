@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>ECharts</title>
+    <script src="js/echarts.min.js" defer></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '© 2024 SzmySama. No rights reserved.';
+            position: absolute;
+            left: 0;
+            top: 250px;
+            width: 500px;
+            text-align: center;
+            font-size: 16px;
+            color: rgba(0, 0, 0, 0.2);
+            transform: rotate(-30deg);
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="main" style="width: 1000px;height:500px;"></div>
+    <script>
+        function convertToReadableDate(seconds) {
+            const date = new Date(seconds * 1000);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const origin_data = {{ .RatingChangesMetaData }}
+
+            const rating_change_data = origin_data.map(item => {
+            const readableDate = convertToReadableDate(item.ratingUpdateTimeSeconds);
+            return [readableDate, item.newRating];
+        });
+
+        const max_rating = Math.max(...rating_change_data.map(item => item[1]));
+        const last_rating_change = rating_change_data[rating_change_data.length - 1][0]
+        const view_rating = max_rating
+
+        const chartDom = document.getElementById('main');
+        const myChart = echarts.init(chartDom);
+
+        const today = new Date()
+        const today_str = today.getFullYear() + '-' +
+            String(today.getMonth() + 1).padStart(2, '0') + '-' +
+            String(today.getDate()).padStart(2, '0')
+
+        option = {
+            animation: false,
+            title: {
+                text: '{{.Handle}}',
+                subtext: today_str,
+                left: 'center',
+            },
+            xAxis: {
+                type: 'time',
+                axisLabel: {
+                    formatter: function (value) {
+                        const date = new Date(value);
+                        const year = date.getFullYear();
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        const day = date.getDate().toString().padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    },
+                    rotate: 45,
+                },
+                min: function (value) {
+                    return new Date(value.min - (value.max - value.min) * 0.05);
+                },
+                max: function (value) {
+                    return new Date(value.max + (value.max - value.min) * 0.05);
+                },
+            },
+            yAxis: {
+                type: 'value',
+                axisTick: {
+                    show: false
+                },
+                min: function (value) {
+                    return value.min - 100;
+                },
+                max: function (value) {
+                    return value.max + 100;
+                },
+                axisLabel: {
+                    show: false
+                },
+                splitLine: {
+                    show: false
+                }
+            },
+
+            series: [{
+                data: rating_change_data,
+                type: 'line',
+                smooth: true,
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: function (params) {
+                        if (params.data[1] >= view_rating || params.data[0] == last_rating_change) {
+                            return params.data[1]
+                        }
+                        return ""
+                    }
+                },
+                markArea: {
+                    silent: true,
+                    data: [
+                        [{ yAxis: 0 }, { yAxis: 1200, itemStyle: { color: '#b0bec5' } }],
+                        [{ yAxis: 1200 }, { yAxis: 1400, itemStyle: { color: '#a5d6a7' } }],
+                        [{ yAxis: 1400 }, { yAxis: 1600, itemStyle: { color: '#80cbc4' } }],
+                        [{ yAxis: 1600 }, { yAxis: 1900, itemStyle: { color: '#81d4fa' } }],
+                        [{ yAxis: 1900 }, { yAxis: 2100, itemStyle: { color: '#e1bee7' } }],
+                        [{ yAxis: 2100 }, { yAxis: 2300, itemStyle: { color: '#ffcc80' } }],
+                        [{ yAxis: 2300 }, { yAxis: 2400, itemStyle: { color: '#ffb74d' } }],
+                        [{ yAxis: 2400 }, { yAxis: 2600, itemStyle: { color: '#ff6666' } }],
+                        [{ yAxis: 2600 }, { yAxis: 3000, itemStyle: { color: '#ff0000' } }],
+                        [{ yAxis: 3000 }, { yAxis: 4000, itemStyle: { color: '#cc0000' } }],
+                        [{ yAxis: 4000 }, { yAxis: 9999, itemStyle: { color: '#990000' } }],
+                    ]
+                },
+                markLine: {
+                    silent: true,
+                    symbol: 'none',
+                    label: {
+                        position: 'start',
+                        formatter: '{c}'
+                    },
+                    data: [
+                        { yAxis: 1200 },
+                        { yAxis: 1400 },
+                        { yAxis: 1600 },
+                        { yAxis: 1900 },
+                        { yAxis: 2100 },
+                        { yAxis: 2300 },
+                        { yAxis: 2400 },
+                        { yAxis: 2600 },
+                        { yAxis: 3000 },
+                        { yAxis: 4000 },
+
+                    ],
+                    lineStyle: {
+                        color: 'black',
+                        type: 'dashed'
+                    }
+                }
+            }]
+        };
+        option && myChart.setOption(option);
+
+        });
+    </script>
+</body>
+
+</html>

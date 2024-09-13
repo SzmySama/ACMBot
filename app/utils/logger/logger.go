@@ -20,6 +20,10 @@ const (
 )
 
 func Init() {
+
+}
+
+func init() {
 	logrus.SetFormatter(&LogFormatter{})
 }
 
