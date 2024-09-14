@@ -12,3 +12,8 @@ func main() {
 	db.Migrate()
 	bot.Start()
 }
+
+// func main() {
+// 	logger.Init()
+
+// }
