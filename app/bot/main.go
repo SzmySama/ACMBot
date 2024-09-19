@@ -41,11 +41,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 	if err != nil {
 		ctx.Send("出错惹🥹: " + err.Error())
 	}
-	var result message.Message
-	for _, v := range allRace {
-		result = append(result, message.CustomNode("", 0, v.String()))
-	}
-	ctx.Send(result)
+	ctx.Send(allRace.AllRacesMessageSegments)
 }
 
 func process_CodeforcesUserProfile(handle string, ctx *zero.Ctx) {
@@ -126,13 +122,11 @@ func codeforcesRaceHandler(ctx *zero.Ctx) {
 	if err != nil {
 		ctx.Send("出错惹🥵: " + err.Error())
 	}
-	var result message.Message
-	for _, v := range allRace {
-		if v.Source == "Codeforces" {
-			result = append(result, message.CustomNode("", 0, v.String()))
-		}
+	if len(allRace.CodeforcesRacesMessageSegments) > 0 {
+		ctx.Send(allRace.CodeforcesRacesMessageSegments)
+	} else {
+		ctx.Send("近期没有codeforces")
 	}
-	ctx.Send(result)
 }
 
 func bindCodeforcesHandler(ctx *zero.Ctx) {
@@ -176,8 +170,30 @@ func myCodeforcesHandler(ctx *zero.Ctx) {
 		return
 	}
 
-	go process_CodeforcesRatingChange(handle, ctx)
-	go process_CodeforcesUserProfile(handle, ctx)
+	process_CodeforcesUserProfile(handle, ctx)
+}
+
+func myRatingHandler(ctx *zero.Ctx) {
+	db := db.GetDBConnection()
+	ID := ctx.Event.Sender.ID
+
+	var handle string
+	err := db.Model(&types.QQUser{}).
+		Select("CodeforcesHandle").
+		Where("id = ?", ID).
+		Limit(1).
+		Scan(&handle).
+		Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.Send("没有查询到你的绑定信息，快来绑定吧🥰")
+			return
+		}
+		ctx.Send(fmt.Sprintf("DB Err😰: %v", err))
+		return
+	}
+
+	process_CodeforcesRatingChange(handle, ctx)
 }
 
 func init() {
@@ -189,6 +205,8 @@ func init() {
 
 	zero.OnCommand("绑定cf").Handle(bindCodeforcesHandler)
 	zero.OnCommand("我的cf").Handle(myCodeforcesHandler)
+	zero.OnCommand("我的rt").Handle(myRatingHandler)
+
 }
 
 func Start() {

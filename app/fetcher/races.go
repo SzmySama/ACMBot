@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"sort"
 	"time"
+
+	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
 var (
@@ -55,14 +57,23 @@ func fetchAllRaces() error {
 	return nil
 }
 
-func GetAllRaces() ([]Race, error) {
+func GetAllRaces() (*CacheRaceData, error) {
 	if time.Since(cacheRace.UpdateAt).Hours() > 24 {
 		if err := fetchAllRaces(); err != nil {
-			return cacheRace.Races, err
+			return &cacheRace, err
 		}
 		sort.Slice(cacheRace.Races, func(i, j int) bool {
 			return cacheRace.Races[i].StartTime.Before(cacheRace.Races[j].StartTime)
 		})
+		cacheRace.AllRacesMessageSegments = cacheRace.AllRacesMessageSegments[0:0]
+		cacheRace.CodeforcesRacesMessageSegments = cacheRace.CodeforcesRacesMessageSegments[0:0]
+		for _, v := range cacheRace.Races {
+			node := message.CustomNode("", 0, v.String())
+			cacheRace.AllRacesMessageSegments = append(cacheRace.AllRacesMessageSegments, node)
+			if v.Source == "Codeforces" {
+				cacheRace.CodeforcesRacesMessageSegments = append(cacheRace.CodeforcesRacesMessageSegments, node)
+			}
+		}
 	}
-	return cacheRace.Races, nil
+	return &cacheRace, nil
 }

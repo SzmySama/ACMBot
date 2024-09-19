@@ -3,6 +3,8 @@ package fetcher
 import (
 	"fmt"
 	"time"
+
+	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
 type codeforcesResponse[T any] struct {
@@ -20,8 +22,10 @@ type Race struct {
 }
 
 type CacheRaceData struct {
-	Races    []Race
-	UpdateAt time.Time
+	Races                          []Race
+	AllRacesMessageSegments        []message.MessageSegment
+	CodeforcesRacesMessageSegments []message.MessageSegment
+	UpdateAt                       time.Time
 }
 
 func (r *Race) String() string {
