@@ -3,6 +3,7 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"sort"
@@ -12,8 +13,8 @@ import (
 )
 
 var (
-	cacheRace       CacheRaceData
-	avilableSources = []string{
+	cacheRace        CacheRaceData
+	availableSources = []string{
 		"牛客竞赛",
 		"洛谷",
 		"AtCoder",
@@ -27,7 +28,12 @@ func fetchAllRaces() error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch all race API: %v", err)
 	}
-	defer res.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			logrus.Errorf("failed to close response body: %v", err)
+		}
+	}(res.Body)
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
@@ -43,7 +49,7 @@ func fetchAllRaces() error {
 	var targetRace []Race
 
 	for _, race := range cacheRace.Races {
-		for _, raceSource := range avilableSources {
+		for _, raceSource := range availableSources {
 			if race.Source == raceSource {
 				targetRace = append(targetRace, race)
 				continue

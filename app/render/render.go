@@ -13,18 +13,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const ()
-
 var (
-	_FULL_TEMPLATE_PATH            string
+	fullTemplatePath               string
 	codeforcesUserProfileTemplate  *template.Template
 	codeforcesRatingChangeTemplate *template.Template
 )
 
 const (
-	_TEMPLATE_PATH                          = "app/templates/"
-	CODEFORCES_USER_PROFILE_TEMPLATE_PATH   = _TEMPLATE_PATH + "codeforces_profile.html"
-	CODEFORCES_RATING_CHANGES_TEMPLATE_PATH = _TEMPLATE_PATH + "codeforces_rating_change.html"
+	templatePath                        = "app/templates/"
+	CodeforcesUserProfileTemplatePath   = templatePath + "codeforces_profile.html"
+	CodeforcesRatingChangesTemplatePath = templatePath + "codeforces_rating_change.html"
 )
 
 func init() {
@@ -32,15 +30,15 @@ func init() {
 	if err != nil {
 		log.Fatalf("Failed to get exec info: %v", err)
 	}
-	_FULL_TEMPLATE_PATH = path.Dir(execPath + "/" + _TEMPLATE_PATH)
-	log.Infof(_FULL_TEMPLATE_PATH)
+	fullTemplatePath = path.Dir(execPath + "/" + templatePath)
+	log.Infof(fullTemplatePath)
 
-	template_map := map[**template.Template]string{
-		&codeforcesUserProfileTemplate:  CODEFORCES_USER_PROFILE_TEMPLATE_PATH,
-		&codeforcesRatingChangeTemplate: CODEFORCES_RATING_CHANGES_TEMPLATE_PATH,
+	templateMap := map[**template.Template]string{
+		&codeforcesUserProfileTemplate:  CodeforcesUserProfileTemplatePath,
+		&codeforcesRatingChangeTemplate: CodeforcesRatingChangesTemplatePath,
 	}
 
-	for k, v := range template_map {
+	for k, v := range templateMap {
 		*k, err = template.ParseFiles(v)
 		if err != nil {
 			log.Fatalf("Failed to load template %s: %v", v, err)
@@ -48,20 +46,34 @@ func init() {
 	}
 }
 
-func Html(PageOpt *playwright.BrowserNewPageOptions, HTMLOpt *RenderHTMLOptions) ([]byte, error) {
+func Html(PageOpt *playwright.BrowserNewPageOptions, HTMLOpt *HtmlOptions) ([]byte, error) {
 	page, err := GetNewPage(*PageOpt)
 	if err != nil {
 		return nil, err
 	}
-	defer page.Close()
+	defer func(page playwright.Page, options ...playwright.PageCloseOptions) {
+		err := page.Close(options...)
+		if err != nil {
+			log.Errorf("Failed to close page: %v", err)
+		}
+	}(page)
 	if strings.HasPrefix(HTMLOpt.Path, "file://") {
-		page.Goto(HTMLOpt.Path)
+		_, err := page.Goto(HTMLOpt.Path)
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		page.Goto("file://" + HTMLOpt.Path)
+		_, err := page.Goto("file://" + HTMLOpt.Path)
+		if err != nil {
+			return nil, err
+		}
 	}
-	page.SetContent(HTMLOpt.HTML, playwright.PageSetContentOptions{
+	err = page.SetContent(HTMLOpt.HTML, playwright.PageSetContentOptions{
 		WaitUntil: playwright.WaitUntilStateNetworkidle,
 	})
+	if err != nil {
+		return nil, err
+	}
 	return page.Screenshot(playwright.PageScreenshotOptions{
 		// FullPage: &[]bool{true}[0],
 		Type: playwright.ScreenshotTypePng,
@@ -83,8 +95,8 @@ func CodeforcesUserProfile(user types.User) ([]byte, error) {
 				Width:  400,
 				Height: 225,
 			},
-		}, &RenderHTMLOptions{
-			Path: _FULL_TEMPLATE_PATH,
+		}, &HtmlOptions{
+			Path: fullTemplatePath,
 			HTML: buffer.String(),
 		},
 	)
@@ -105,8 +117,8 @@ func CodeforcesRatingChanges(ratingChanges []types.RatingChange, handle string) 
 				Width:  1000,
 				Height: 500,
 			},
-		}, &RenderHTMLOptions{
-			Path: _FULL_TEMPLATE_PATH,
+		}, &HtmlOptions{
+			Path: fullTemplatePath,
 			HTML: buffer.String(),
 		},
 	)

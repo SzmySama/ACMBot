@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/SzmySama/ACMBot/app/types"
@@ -28,7 +29,8 @@ func InitDB(autoCreate bool) error {
 			return fmt.Errorf("failed to connect to DB: %w", err)
 		}
 
-		if mysqlErr, ok := err.(*mysqldriver.MySQLError); ok && mysqlErr.Number == 1049 {
+		var mysqlErr *mysqldriver.MySQLError
+		if errors.As(err, &mysqlErr) && mysqlErr.Number == 1049 {
 			log.Warn(fmt.Sprintf("DataBase %s NOT exist, Creating", cfg.DatabaseName))
 			// DataBase [DBName] Not Found
 
@@ -64,8 +66,6 @@ func InitDB(autoCreate bool) error {
 			if err != nil {
 				log.Fatalf("Failed to use database %v: %v", cfg.DatabaseName, err)
 			}
-		} else {
-			log.Fatalf("Failed to Open DataBase:%v", err)
 		}
 	}
 	return nil

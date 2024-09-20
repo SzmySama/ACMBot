@@ -14,7 +14,7 @@ func CleanWhileExit() {
 
 	clean := func() {
 		<-sigs
-		render.ShutdownnBowers()
+		_ = render.ShutdownBowers()
 		os.Exit(0)
 	}
 

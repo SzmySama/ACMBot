@@ -32,7 +32,7 @@ func init() {
 	log.Info(_bowers)
 }
 
-func ShutdownnBowers() error {
+func ShutdownBowers() error {
 	return _playwright.Stop()
 }
 

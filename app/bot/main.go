@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	QUERY_LIMIT = 3
+	QueryLimit = 3
 )
 
 var (
@@ -44,7 +44,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 	ctx.Send(allRace.AllRacesMessageSegments)
 }
 
-func process_CodeforcesUserProfile(handle string, ctx *zero.Ctx) {
+func codeforcesUserProfile(handle string, ctx *zero.Ctx) {
 	if err := fetcher.UpdateCodeforcesUserSubmissions(handle); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
 		return
@@ -67,25 +67,25 @@ func process_CodeforcesUserProfile(handle string, ctx *zero.Ctx) {
 
 func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	if len(handles) > QUERY_LIMIT {
+	if len(handles) > QueryLimit {
 		ctx.Send("发这么多会坏掉的🥰")
 		return
 	}
 
 	for _, handle := range handles {
-		go process_CodeforcesUserProfile(handle, ctx)
+		go codeforcesUserProfile(handle, ctx)
 	}
 }
 
-func process_CodeforcesRatingChange(handle string, ctx *zero.Ctx) {
-	db := db.GetDBConnection()
+func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
+	dbConnection := db.GetDBConnection()
 	if err := fetcher.UpdateCodeforcesUserRatingChanges(handle); err != nil {
 		ctx.Send(fmt.Sprintf("没有查到%s🥺: %v", handle, err))
 		logrus.Warnf("没有查到%s🥺: %v", handle, err)
 		return
 	}
 	var user types.User
-	if err := db.Where("handle = ?", handle).First(&user).Error; err != nil {
+	if err := dbConnection.Where("handle = ?", handle).First(&user).Error; err != nil {
 		ctx.Send(fmt.Sprintf("DB Err😭: %v", err))
 		logrus.Warnf("DB Err😭: %v", err)
 		return
@@ -96,24 +96,24 @@ func process_CodeforcesRatingChange(handle string, ctx *zero.Ctx) {
 		return
 	}
 
-	img_data, err := render.CodeforcesRatingChanges(user.RatingChanges, handle)
+	imgData, err := render.CodeforcesRatingChanges(user.RatingChanges, handle)
 	if err != nil {
 		ctx.Send(fmt.Sprintf("render err😰: %v", err))
 		logrus.Warnf("render err😰: %v", err)
 		return
 	}
-	ctx.Send([]message.MessageSegment{message.ImageBytes(img_data)})
+	ctx.Send([]message.MessageSegment{message.ImageBytes(imgData)})
 }
 
 func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	if len(handles) > QUERY_LIMIT {
+	if len(handles) > QueryLimit {
 		ctx.Send("发这么多会坏掉的🥰")
 		return
 	}
 
 	for _, i := range handles {
-		go process_CodeforcesRatingChange(i, ctx)
+		go processCodeforcesRatingChange(i, ctx)
 	}
 }
 
@@ -130,19 +130,19 @@ func codeforcesRaceHandler(ctx *zero.Ctx) {
 }
 
 func bindCodeforcesHandler(ctx *zero.Ctx) {
-	db := db.GetDBConnection()
+	dbConnection := db.GetDBConnection()
 	ID := ctx.Event.Sender.ID
 	handle := strings.Split(ctx.MessageString(), " ")[1]
 
 	var err error
 	var user types.QQUser
-	err = db.FirstOrCreate(&user, types.QQUser{ID: ID}).Error
+	err = dbConnection.FirstOrCreate(&user, types.QQUser{ID: ID}).Error
 	if err != nil {
 		ctx.Send(fmt.Sprintf("绑定失败😭: %v", err))
 		return
 	}
 	user.CodeforcesHandle = handle
-	err = db.Save(&user).Error
+	err = dbConnection.Save(&user).Error
 	if err != nil {
 		ctx.Send(fmt.Sprintf("绑定失败😭: %v", err))
 		return
@@ -151,11 +151,11 @@ func bindCodeforcesHandler(ctx *zero.Ctx) {
 }
 
 func myCodeforcesHandler(ctx *zero.Ctx) {
-	db := db.GetDBConnection()
+	dbConnection := db.GetDBConnection()
 	ID := ctx.Event.Sender.ID
 
 	var handle string
-	err := db.Model(&types.QQUser{}).
+	err := dbConnection.Model(&types.QQUser{}).
 		Select("CodeforcesHandle").
 		Where("id = ?", ID).
 		Limit(1).
@@ -170,15 +170,15 @@ func myCodeforcesHandler(ctx *zero.Ctx) {
 		return
 	}
 
-	process_CodeforcesUserProfile(handle, ctx)
+	codeforcesUserProfile(handle, ctx)
 }
 
 func myRatingHandler(ctx *zero.Ctx) {
-	db := db.GetDBConnection()
+	dbConnection := db.GetDBConnection()
 	ID := ctx.Event.Sender.ID
 
 	var handle string
-	err := db.Model(&types.QQUser{}).
+	err := dbConnection.Model(&types.QQUser{}).
 		Select("CodeforcesHandle").
 		Where("id = ?", ID).
 		Limit(1).
@@ -193,7 +193,7 @@ func myRatingHandler(ctx *zero.Ctx) {
 		return
 	}
 
-	process_CodeforcesRatingChange(handle, ctx)
+	processCodeforcesRatingChange(handle, ctx)
 }
 
 func init() {

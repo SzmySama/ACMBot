@@ -156,7 +156,7 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 	}
 
 	for _, v := range newSubmissions {
-		if v.Status == types.SUBMISSION_STATUS_OK {
+		if v.Status == types.SubmissionStatusOk {
 			user.Solved++
 		}
 	}

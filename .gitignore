@@ -27,3 +27,4 @@ go.work.sum
 conf.toml
 .VSCodeCounter
 _*
+.idea

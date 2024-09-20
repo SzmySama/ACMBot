@@ -67,7 +67,12 @@ func writeConfig(config *ConfigStruct) error {
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %v", err)
 	}
-	defer configFile.Close()
+	defer func(configFile *os.File) {
+		err := configFile.Close()
+		if err != nil {
+			log.Errorf("failed to close config file: %v", err)
+		}
+	}(configFile)
 
 	// write
 	if err := toml.NewEncoder(configFile).Encode(config); err != nil {
@@ -123,7 +128,12 @@ func GetConfig() *ConfigStruct {
 			log.Fatalf("failed to load config file %s: %v", configPath, err)
 		}
 		log.Debug("load file successfully, loading config")
-		defer configFile.Close()
+		defer func(configFile *os.File) {
+			err := configFile.Close()
+			if err != nil {
+				log.Errorf("failed to close config file: %v", err)
+			}
+		}(configFile)
 		metaInFile, err := toml.NewDecoder(configFile).Decode(&config)
 		if err != nil {
 			log.Fatalf("failed to decode config file: %v", err)

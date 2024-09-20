@@ -4,7 +4,7 @@ import (
 	"github.com/SzmySama/ACMBot/app/types"
 )
 
-type RenderHTMLOptions struct {
+type HtmlOptions struct {
 	Path string
 	HTML string
 }
@@ -12,7 +12,7 @@ type RenderHTMLOptions struct {
 type CodeforcesUserProfileData struct {
 	types.User
 
-	Level codeforcesRatingLevel
+	Level CodeforcesRatingLevel
 }
 
 type CodeforcesRatingChangesData struct {
@@ -20,20 +20,20 @@ type CodeforcesRatingChangesData struct {
 	Handle                string
 }
 
-type codeforcesRatingLevel string
+type CodeforcesRatingLevel string
 
-func ConvertRatingToLevel(rating int) codeforcesRatingLevel {
+func ConvertRatingToLevel(rating int) CodeforcesRatingLevel {
 	const (
-		CodeforcesRatingLevelNewbie                   codeforcesRatingLevel = "newbie"
-		CodeforcesRatingLevelPupil                    codeforcesRatingLevel = "pupil"
-		CodeforcesRatingLevelSpecialist               codeforcesRatingLevel = "specialist"
-		CodeforcesRatingLevelExpert                   codeforcesRatingLevel = "expert"
-		CodeforcesRatingLevelCandidateMaster          codeforcesRatingLevel = "candidate-master"
-		CodeforcesRatingLevelMaster                   codeforcesRatingLevel = "master"
-		CodeforcesRatingLevelInternationalMaster      codeforcesRatingLevel = "international-master"
-		CodeforcesRatingLevelGrandmaster              codeforcesRatingLevel = "grandmaster"
-		CodeforcesRatingLevelInternationalGrandmaster codeforcesRatingLevel = "international-grandmaster"
-		CodeforcesRatingLevelLegendaryGrandmaster     codeforcesRatingLevel = "legendary-grandmaster"
+		CodeforcesRatingLevelNewbie                   CodeforcesRatingLevel = "newbie"
+		CodeforcesRatingLevelPupil                    CodeforcesRatingLevel = "pupil"
+		CodeforcesRatingLevelSpecialist               CodeforcesRatingLevel = "specialist"
+		CodeforcesRatingLevelExpert                   CodeforcesRatingLevel = "expert"
+		CodeforcesRatingLevelCandidateMaster          CodeforcesRatingLevel = "candidate-master"
+		CodeforcesRatingLevelMaster                   CodeforcesRatingLevel = "master"
+		CodeforcesRatingLevelInternationalMaster      CodeforcesRatingLevel = "international-master"
+		CodeforcesRatingLevelGrandmaster              CodeforcesRatingLevel = "grandmaster"
+		CodeforcesRatingLevelInternationalGrandmaster CodeforcesRatingLevel = "international-grandmaster"
+		CodeforcesRatingLevelLegendaryGrandmaster     CodeforcesRatingLevel = "legendary-grandmaster"
 	)
 	switch {
 	case rating < 1200:

@@ -8,23 +8,23 @@ import (
 type SubmissionStatus string
 
 const (
-	SUBMISSION_STATUS_FAILED                    SubmissionStatus = "FAILED"
-	SUBMISSION_STATUS_OK                        SubmissionStatus = "OK"
-	SUBMISSION_STATUS_PARTIAL                   SubmissionStatus = "PARTIAL"
-	SUBMISSION_STATUS_COMPILATION_ERROR         SubmissionStatus = "COMPILATION_ERROR"
-	SUBMISSION_STATUS_RUNTIME_ERROR             SubmissionStatus = "RUNTIME_ERROR"
-	SUBMISSION_STATUS_WRONG_ANSWER              SubmissionStatus = "WRONG_ANSWER"
-	SUBMISSION_STATUS_PRESENTATION_ERROR        SubmissionStatus = "PRESENTATION_ERROR"
-	SUBMISSION_STATUS_TIME_LIMIT_EXCEEDED       SubmissionStatus = "TIME_LIMIT_EXCEEDED"
-	SUBMISSION_STATUS_MEMORY_LIMIT_EXCEEDED     SubmissionStatus = "MEMORY_LIMIT_EXCEEDED"
-	SUBMISSION_STATUS_IDLENESS_LIMIT_EXCEEDED   SubmissionStatus = "IDLENESS_LIMIT_EXCEEDED"
-	SUBMISSION_STATUS_SECURITY_VIOLATED         SubmissionStatus = "SECURITY_VIOLATED"
-	SUBMISSION_STATUS_CRASHED                   SubmissionStatus = "CRASHED"
-	SUBMISSION_STATUS_INPUT_PREPARATION_CRASHED SubmissionStatus = "INPUT_PREPARATION_CRASHED"
-	SUBMISSION_STATUS_CHALLENGED                SubmissionStatus = "CHALLENGED"
-	SUBMISSION_STATUS_SKIPPED                   SubmissionStatus = "SKIPPED"
-	SUBMISSION_STATUS_TESTING                   SubmissionStatus = "TESTING"
-	SUBMISSION_STATUS_REJECTED                  SubmissionStatus = "REJECTED"
+	SubmissionStatusFailed                  SubmissionStatus = "FAILED"
+	SubmissionStatusOk                      SubmissionStatus = "OK"
+	SubmissionStatusPartial                 SubmissionStatus = "PARTIAL"
+	SubmissionStatusCompilationError        SubmissionStatus = "COMPILATION_ERROR"
+	SubmissionStatusRuntimeError            SubmissionStatus = "RUNTIME_ERROR"
+	SubmissionStatusWrongAnswer             SubmissionStatus = "WRONG_ANSWER"
+	SubmissionStatusPresentationError       SubmissionStatus = "PRESENTATION_ERROR"
+	SubmissionStatusTimeLimitExceeded       SubmissionStatus = "TIME_LIMIT_EXCEEDED"
+	SubmissionStatusMemoryLimitExceeded     SubmissionStatus = "MEMORY_LIMIT_EXCEEDED"
+	SubmissionStatusIdlenessLimitExceeded   SubmissionStatus = "IDLENESS_LIMIT_EXCEEDED"
+	SubmissionStatusSecurityViolated        SubmissionStatus = "SECURITY_VIOLATED"
+	SubmissionStatusCrashed                 SubmissionStatus = "CRASHED"
+	SubmissionStatusInputPreparationCrashed SubmissionStatus = "INPUT_PREPARATION_CRASHED"
+	SubmissionStatusChallenged              SubmissionStatus = "CHALLENGED"
+	SubmissionStatusSkipped                 SubmissionStatus = "SKIPPED"
+	SubmissionStatusTesting                 SubmissionStatus = "TESTING"
+	SubmissionStatusRejected                SubmissionStatus = "REJECTED"
 )
 
 type User struct {
@@ -103,35 +103,35 @@ func (r *RatingChange) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (u User) MarshalJSON() ([]byte, error) {
+func (u *User) MarshalJSON() ([]byte, error) {
 	type alias User
 	return json.Marshal(&struct {
 		T int64 `json:"registrationTimeSeconds"`
 		*alias
 	}{
 		T:     u.CreatedAt.Unix(),
-		alias: (*alias)(&u),
+		alias: (*alias)(u),
 	})
 }
 
-func (s Submission) MarshalJSON() ([]byte, error) {
+func (s *Submission) MarshalJSON() ([]byte, error) {
 	type alias Submission
 	return json.Marshal(&struct {
 		T int64 `json:"creationTimeSeconds"`
 		*alias
 	}{
 		T:     s.At.Unix(),
-		alias: (*alias)(&s),
+		alias: (*alias)(s),
 	})
 }
 
-func (r RatingChange) MarshalJSON() ([]byte, error) {
+func (r *RatingChange) MarshalJSON() ([]byte, error) {
 	type alias RatingChange
 	return json.Marshal(&struct {
 		T int64 `json:"ratingUpdateTimeSeconds"`
 		*alias
 	}{
 		T:     r.At.Unix(),
-		alias: (*alias)(&r),
+		alias: (*alias)(r),
 	})
 }
