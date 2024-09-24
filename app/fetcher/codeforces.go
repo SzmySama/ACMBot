@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	SINGAL_FETCH_COUNT = 500
+	SignalFetchCount = 500
 )
 
 func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
@@ -58,7 +58,12 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Errorf("failed to close response body: %v", err)
+		}
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -66,7 +71,7 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error
 	}
 
 	var res codeforcesResponse[T]
-	if err := json.Unmarshal([]byte(body), &res); err != nil {
+	if err := json.Unmarshal(body, &res); err != nil {
 		return nil, err
 	}
 
@@ -105,14 +110,14 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 		2. 获取Submissions的更新时间
 		3. fetch用户的提交记录，更新数据库相关数据
 	*/
-	db := db.GetDBConnection()
+	dbConnection := db.GetDBConnection()
 	var user types.User
-	if result := db.Where("handle = ?", handle).First(&user); result.Error != nil {
+	if result := dbConnection.Where("handle = ?", handle).First(&user); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			if err := UpdateCodeforcesUserInfo(handle); err != nil {
 				return err
 			}
-			if err := db.Where("handle = ?", handle).First(&user).Error; err != nil {
+			if err := dbConnection.Where("handle = ?", handle).First(&user).Error; err != nil {
 				return fmt.Errorf("panic err while fetch user: Unexpected brach: %v", err)
 			}
 		} else {
@@ -127,22 +132,22 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 
 	var fetchCount = 1
 	var newSubmissions []types.Submission
-	var currectLastSubmissionTimeStamp time.Time
+	var correctLastSubmissionTimeStamp time.Time
 
 	for {
-		res, err := FetchCodeforcesUserSubmissions(handle, fetchCount, SINGAL_FETCH_COUNT)
+		res, err := FetchCodeforcesUserSubmissions(handle, fetchCount, SignalFetchCount)
 		if err != nil {
 			return err
 		}
 		if len(*res) == 0 {
 			break
 		}
-		currectLastSubmissionTimeStamp = (*res)[len(*res)-1].At
+		correctLastSubmissionTimeStamp = (*res)[len(*res)-1].At
 
-		if currectLastSubmissionTimeStamp.Sub(user.SubmissionUpdatedAt).Seconds() > 0 {
+		if correctLastSubmissionTimeStamp.Sub(user.SubmissionUpdatedAt).Seconds() > 0 {
 			// 当前获取到的数据和原始数据没有交集
 			newSubmissions = append(newSubmissions, *res...)
-			fetchCount += SINGAL_FETCH_COUNT
+			fetchCount += SignalFetchCount
 			continue
 		} else {
 			for _, v := range *res {
@@ -163,24 +168,23 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 
 	user.Submissions = append(newSubmissions, user.Submissions...)
 	user.SubmissionUpdatedAt = time.Now()
-	// log.Infof("%v", user.Submissions)
 	// 更新数据库数据
-	if err := db.Save(&user).Error; err != nil {
+	if err := dbConnection.Save(&user).Error; err != nil {
 		return err
 	}
 	return nil
 }
 
 func UpdateCodeforcesUserRatingChanges(handle string) error {
-	db := db.GetDBConnection()
+	dbConnection := db.GetDBConnection()
 	var user types.User
-	if result := db.Where("handle = ?", handle).First(&user); result.Error != nil {
+	if result := dbConnection.Where("handle = ?", handle).First(&user); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			if err := UpdateCodeforcesUserInfo(handle); err != nil {
 				return err
 			}
 
-			if err := db.Where("handle = ?", handle).First(&user).Error; err != nil {
+			if err := dbConnection.Where("handle = ?", handle).First(&user).Error; err != nil {
 				return fmt.Errorf("panic err while fetch user: Unexpected brach: %v", err)
 			}
 
@@ -201,7 +205,7 @@ func UpdateCodeforcesUserRatingChanges(handle string) error {
 	if length := len(*ratingChanges); length > 0 {
 		user.RatingChangeUpdateAt = time.Now()
 	}
-	if err := db.Save(&user).Error; err != nil {
+	if err := dbConnection.Save(&user).Error; err != nil {
 		return err
 	}
 	return nil

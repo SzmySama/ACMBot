@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	zero "github.com/wdvxdr1123/ZeroBot"
 	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/wdvxdr1123/ZeroBot/message"
@@ -63,7 +65,7 @@ func fetchAllRaces() error {
 	return nil
 }
 
-func GetAllRaces() (*CacheRaceData, error) {
+func GetAndUpdateRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 	if time.Since(cacheRace.UpdateAt).Hours() > 24 {
 		if err := fetchAllRaces(); err != nil {
 			return &cacheRace, err
@@ -73,11 +75,17 @@ func GetAllRaces() (*CacheRaceData, error) {
 		})
 		cacheRace.AllRacesMessageSegments = cacheRace.AllRacesMessageSegments[0:0]
 		cacheRace.CodeforcesRacesMessageSegments = cacheRace.CodeforcesRacesMessageSegments[0:0]
+
+		BotQID, err := strconv.ParseInt(ctx.GetLoginInfo().Get("user_id").String(), 10, 64)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return &cacheRace, fmt.Errorf("failed to parse bot_id: %v", err)
+		}
 		for _, v := range cacheRace.Races {
-			node := message.CustomNode("", 0, v.String())
-			cacheRace.AllRacesMessageSegments = append(cacheRace.AllRacesMessageSegments, node)
+			MessageID := ctx.SendPrivateMessage(BotQID, v.String())
+			cacheRace.AllRacesMessageSegments = append(cacheRace.AllRacesMessageSegments, message.Node(MessageID))
 			if v.Source == "Codeforces" {
-				cacheRace.CodeforcesRacesMessageSegments = append(cacheRace.CodeforcesRacesMessageSegments, node)
+				cacheRace.CodeforcesRacesMessageSegments = append(cacheRace.CodeforcesRacesMessageSegments, message.Node(MessageID))
 			}
 		}
 	}
