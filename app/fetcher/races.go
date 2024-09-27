@@ -3,6 +3,7 @@ package fetcher
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/SzmySama/ACMBot/app/utils/slice"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"io"
@@ -65,7 +66,7 @@ func fetchAllRaces() error {
 	return nil
 }
 
-func GetAndUpdateRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
+func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 	if time.Since(cacheRace.UpdateAt).Hours() > 24 {
 		if err := fetchAllRaces(); err != nil {
 			return &cacheRace, err
@@ -84,10 +85,24 @@ func GetAndUpdateRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 		for _, v := range cacheRace.Races {
 			MessageID := ctx.SendPrivateMessage(BotQID, v.String())
 			cacheRace.AllRacesMessageSegments = append(cacheRace.AllRacesMessageSegments, message.Node(MessageID))
-			if v.Source == "Codeforces" {
-				cacheRace.CodeforcesRacesMessageSegments = append(cacheRace.CodeforcesRacesMessageSegments, message.Node(MessageID))
-			}
 		}
+
+		// 近期cf直接从codeforces的API获取, 下面在获取codeforces
+		codeforcesRaces, err := FetchCodeforcesContestList(false)
+		if err != nil {
+			return &cacheRace, fmt.Errorf("failed to fetch codeforces: %v", err)
+		}
+		for _, v := range *codeforcesRaces {
+			if time.Unix(v.StartTimeSeconds, 0).Before(time.Now()) {
+				break
+			}
+			if v.Phase != "BEFORE" {
+				continue
+			}
+			MessageID := ctx.SendPrivateMessage(BotQID, v.ToRace().String())
+			cacheRace.CodeforcesRacesMessageSegments = append(cacheRace.CodeforcesRacesMessageSegments, message.Node(MessageID))
+		}
+		slice.Reverse(cacheRace.CodeforcesRacesMessageSegments)
 	}
 	return &cacheRace, nil
 }

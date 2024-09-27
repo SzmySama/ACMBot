@@ -9,10 +9,11 @@
 ## TODO
 ### 个人信息展示
 - [x] CodeForces | usage: `cf [username]`
+- [x] CodeForces Rating曲线图 | Usage: `rating [username]`
 - [ ] AtCoder
 - [ ] NowCoder
 ### 近期比赛
-- [ ] CodeForces | usage: `近期cf`
+- [x] CodeForces | usage: `近期cf`
 - [ ] AtCoder | usage: `近期at`
 - [ ] NowCoder | usage: `近期nk`
 ### 其他

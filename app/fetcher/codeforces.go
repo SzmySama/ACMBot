@@ -104,6 +104,12 @@ func FetchCodeforcesUserRatingChanges(handle string) (*[]types.RatingChange, err
 	})
 }
 
+func FetchCodeforcesContestList(gym bool) (*[]CodeforcesRace, error) {
+	return fetchCodeforcesAPI[[]CodeforcesRace]("contest.list", map[string]any{
+		"gym": gym,
+	})
+}
+
 func UpdateCodeforcesUserSubmissions(handle string) error {
 	/*
 		1. 获取用户，不存在则返回

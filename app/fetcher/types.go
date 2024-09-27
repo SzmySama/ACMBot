@@ -21,6 +21,17 @@ type Race struct {
 	EndTime   time.Time `json:"end_time"`
 }
 
+type CodeforcesRace struct {
+	ID                  int    `json:"id"`
+	Name                string `json:"name"`
+	Type                string `json:"type"`
+	Phase               string `json:"phase"`
+	Frozen              bool   `json:"frozen"`
+	DurationSeconds     int    `json:"durationSeconds"`
+	StartTimeSeconds    int64  `json:"startTimeSeconds"`
+	RelativeTimeSeconds int    `json:"relativeTimeSeconds"`
+}
+
 type CacheRaceData struct {
 	Races                          []Race
 	AllRacesMessageSegments        []message.MessageSegment
@@ -49,4 +60,14 @@ func (r *Race) String() string {
 		dStr,
 		r.Link,
 	)
+}
+
+func (cr *CodeforcesRace) ToRace() *Race {
+	return &Race{
+		Source:    "Codeforces",
+		Name:      cr.Name,
+		Link:      "https://codeforces.com/contests/",
+		StartTime: time.Unix(cr.StartTimeSeconds, 0),
+		EndTime:   time.Unix(cr.StartTimeSeconds+int64(cr.DurationSeconds), 0),
+	}
 }

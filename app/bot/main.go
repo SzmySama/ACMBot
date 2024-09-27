@@ -37,7 +37,7 @@ var (
 )
 
 func allRaceHandler(ctx *zero.Ctx) {
-	allRace, err := fetcher.GetAndUpdateRaces(ctx)
+	allRace, err := fetcher.GetAndFetchRaces(ctx)
 	if err != nil {
 		ctx.Send("出错惹🥹: " + err.Error())
 	}
@@ -118,7 +118,7 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 }
 
 func codeforcesRaceHandler(ctx *zero.Ctx) {
-	allRace, err := fetcher.GetAndUpdateRaces(ctx)
+	allRace, err := fetcher.GetAndFetchRaces(ctx)
 	if err != nil {
 		ctx.Send("出错惹🥵: " + err.Error())
 	}
