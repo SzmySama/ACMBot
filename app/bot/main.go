@@ -18,14 +18,15 @@ import (
 )
 
 const (
-	QueryLimit = 3
+	QueryLimit    = 3
+	CommandPrefix = "#"
 )
 
 var (
 	cfg     = config.GetConfig().RWS
 	zeroCfg = zero.Config{
 		NickName:      []string{"bot"},
-		CommandPrefix: "#",
+		CommandPrefix: CommandPrefix,
 		SuperUsers:    []int64{1549992006},
 		Driver: []zero.Driver{
 			driver.NewWebSocketServer(
@@ -196,6 +197,19 @@ func myRatingHandler(ctx *zero.Ctx) {
 	processCodeforcesRatingChange(handle, ctx)
 }
 
+func menuHandler(ctx *zero.Ctx) {
+	ctx.Send(fmt.Sprintf(""+
+		"以下是功能菜单：所有命令都要加上前缀`%s`🥰\n"+
+		"1.cf [username]，用于查询codeforces用户的基本信息\n"+
+		"2.rating [username]，用于查询codeforces用户的rating变化曲线\n"+
+		"3.近期比赛，用于查询近期的比赛数据，数据来源于sdutacm.cn\n"+
+		"4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com\n"+
+		"项目地址https://github.com/SzmySama/ACMBot，喜欢可以加个Star支持一下\n"+
+		"Bot可以直接拉到自己群里用哦",
+		CommandPrefix,
+	))
+}
+
 func init() {
 	zero.OnCommand("近期比赛").Handle(allRaceHandler)
 
@@ -207,6 +221,7 @@ func init() {
 	zero.OnCommand("我的cf").Handle(myCodeforcesHandler)
 	zero.OnCommand("我的rt").Handle(myRatingHandler)
 
+	zero.OnCommand("菜单").Handle(menuHandler)
 }
 
 func Start() {
