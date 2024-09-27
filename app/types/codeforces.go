@@ -43,8 +43,11 @@ type User struct {
 }
 
 type Problem struct {
-	Rating int      `json:"rating"`
-	Tags   []string `json:"tags"`
+	ContestID      int      `json:"contestId"`
+	ProblemSetName string   `json:"problemsetName"`
+	Index          string   `json:"index"`
+	Rating         int      `json:"rating"`
+	Tags           []string `json:"tags"`
 }
 
 type Submission struct {

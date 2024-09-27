@@ -61,8 +61,6 @@ func fetchAllRaces() error {
 	}
 
 	cacheRace.Races = targetRace
-
-	cacheRace.UpdateAt = time.Now()
 	return nil
 }
 
@@ -92,6 +90,7 @@ func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 		if err != nil {
 			return &cacheRace, fmt.Errorf("failed to fetch codeforces: %v", err)
 		}
+		var nearlyCodeforcesRaces []CodeforcesRace
 		for _, v := range *codeforcesRaces {
 			if time.Unix(v.StartTimeSeconds, 0).Before(time.Now()) {
 				break
@@ -99,10 +98,15 @@ func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 			if v.Phase != "BEFORE" {
 				continue
 			}
+			nearlyCodeforcesRaces = append(nearlyCodeforcesRaces, v)
+		}
+		slice.Reverse(&nearlyCodeforcesRaces)
+		for _, v := range nearlyCodeforcesRaces {
 			MessageID := ctx.SendPrivateMessage(BotQID, v.ToRace().String())
 			cacheRace.CodeforcesRacesMessageSegments = append(cacheRace.CodeforcesRacesMessageSegments, message.Node(MessageID))
 		}
-		slice.Reverse(cacheRace.CodeforcesRacesMessageSegments)
 	}
+	cacheRace.UpdateAt = time.Now()
+
 	return &cacheRace, nil
 }

@@ -201,7 +201,7 @@ func menuHandler(ctx *zero.Ctx) {
 	ctx.Send(fmt.Sprintf(""+
 		"以下是功能菜单：所有命令都要加上前缀`%s`🥰\n"+
 		"1.cf [username]，用于查询codeforces用户的基本信息\n"+
-		"2.rating [username]，用于查询codeforces用户的rating变化曲线\n"+
+		"2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线\n"+
 		"3.近期比赛，用于查询近期的比赛数据，数据来源于sdutacm.cn\n"+
 		"4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com\n"+
 		"项目地址https://github.com/SzmySama/ACMBot，喜欢可以加个Star支持一下\n"+
@@ -215,6 +215,8 @@ func init() {
 
 	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
 	zero.OnCommand("rating").Handle(codeforcesRatingChangeHandler)
+	zero.OnCommand("rt").Handle(codeforcesRatingChangeHandler)
+
 	zero.OnCommand("cf").Handle(codeforcesUserProfileHandler)
 
 	zero.OnCommand("绑定cf").Handle(bindCodeforcesHandler)
