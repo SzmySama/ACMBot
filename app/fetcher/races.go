@@ -72,8 +72,9 @@ func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 		sort.Slice(cacheRace.Races, func(i, j int) bool {
 			return cacheRace.Races[i].StartTime.Before(cacheRace.Races[j].StartTime)
 		})
-		cacheRace.AllRacesMessageSegments = cacheRace.AllRacesMessageSegments[0:0]
-		cacheRace.CodeforcesRacesMessageSegments = cacheRace.CodeforcesRacesMessageSegments[0:0]
+
+		var newAllRacesMessageSegments []message.MessageSegment
+		var newCodeforcesRacesMessageSegments []message.MessageSegment
 
 		BotQID, err := strconv.ParseInt(ctx.GetLoginInfo().Get("user_id").String(), 10, 64)
 		if err != nil {
@@ -82,7 +83,7 @@ func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 		}
 		for _, v := range cacheRace.Races {
 			MessageID := ctx.SendPrivateMessage(BotQID, v.String())
-			cacheRace.AllRacesMessageSegments = append(cacheRace.AllRacesMessageSegments, message.Node(MessageID))
+			newAllRacesMessageSegments = append(newAllRacesMessageSegments, message.Node(MessageID))
 		}
 
 		// 近期cf直接从codeforces的API获取, 下面在获取codeforces
@@ -103,10 +104,12 @@ func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 		slice.Reverse(&nearlyCodeforcesRaces)
 		for _, v := range nearlyCodeforcesRaces {
 			MessageID := ctx.SendPrivateMessage(BotQID, v.ToRace().String())
-			cacheRace.CodeforcesRacesMessageSegments = append(cacheRace.CodeforcesRacesMessageSegments, message.Node(MessageID))
+			newCodeforcesRacesMessageSegments = append(newCodeforcesRacesMessageSegments, message.Node(MessageID))
 		}
+		cacheRace.UpdateAt = time.Now()
+		cacheRace.AllRacesMessageSegments = newAllRacesMessageSegments
+		cacheRace.CodeforcesRacesMessageSegments = newCodeforcesRacesMessageSegments
 	}
-	cacheRace.UpdateAt = time.Now()
 
 	return &cacheRace, nil
 }
