@@ -110,7 +110,7 @@ func FetchCodeforcesContestList(gym bool) (*[]CodeforcesRace, error) {
 	})
 }
 
-func UpdateCodeforcesUserSubmissions(handle string) error {
+func UpdateCodeforcesUserSubmissionsAndRating(handle string) error {
 	/*
 		1. 获取用户，不存在则返回
 		2. 获取Submissions的更新时间
@@ -174,6 +174,14 @@ func UpdateCodeforcesUserSubmissions(handle string) error {
 
 	user.Submissions = append(newSubmissions, user.Submissions...)
 	user.SubmissionUpdatedAt = time.Now()
+
+	// 更新rating数据
+	if u, err := FetchCodeforcesUsersInfo([]string{handle}, false); err != nil {
+		return fmt.Errorf("failed to update cf user: %v", err)
+	} else {
+		user.Rating = (*u)[0].Rating
+	}
+
 	// 更新数据库数据
 	if err := dbConnection.Save(&user).Error; err != nil {
 		return err

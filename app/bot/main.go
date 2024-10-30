@@ -46,7 +46,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 }
 
 func codeforcesUserProfile(handle string, ctx *zero.Ctx) {
-	if err := fetcher.UpdateCodeforcesUserSubmissions(handle); err != nil {
+	if err := fetcher.UpdateCodeforcesUserSubmissionsAndRating(handle); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
 		return
 	}
