@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/SzmySama/ACMBot/app/bot"
-	"github.com/SzmySama/ACMBot/app/model/db"
-	"github.com/SzmySama/ACMBot/app/utils/logger"
+	"github.com/YourSuzumiya/ACMBot/app/bot"
+	"github.com/YourSuzumiya/ACMBot/app/model/db"
+	"github.com/YourSuzumiya/ACMBot/app/utils/logger"
 	"github.com/sirupsen/logrus"
 )
 

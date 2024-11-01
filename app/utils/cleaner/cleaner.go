@@ -5,7 +5,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/SzmySama/ACMBot/app/render"
+	"github.com/YourSuzumiya/ACMBot/app/render"
 )
 
 func CleanWhileExit() {

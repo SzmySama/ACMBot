@@ -1,4 +1,4 @@
-module github.com/SzmySama/ACMBot
+module github.com/YourSuzumiya/ACMBot
 
 go 1.23.0
 

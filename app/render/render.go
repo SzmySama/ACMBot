@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/SzmySama/ACMBot/app/types"
+	"github.com/YourSuzumiya/ACMBot/app/types"
 	"github.com/playwright-community/playwright-go"
 	log "github.com/sirupsen/logrus"
 )

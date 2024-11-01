@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/SzmySama/ACMBot/app/types"
-	"github.com/SzmySama/ACMBot/app/utils/config"
+	"github.com/YourSuzumiya/ACMBot/app/types"
+	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	mysqldriver "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"

@@ -24,7 +24,7 @@
 ## 如何运行
 
 ```shell
-git clone https://github.com/SzmySama/ACMBot
+git clone https://github.com/YourSuzumiya/ACMBot
 cd ACMBot
 go mod tidy
 go run ./main.go

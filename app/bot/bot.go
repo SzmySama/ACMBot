@@ -3,13 +3,13 @@ package bot
 import (
 	"errors"
 	"fmt"
+	fetcher2 "github.com/YourSuzumiya/ACMBot/app/model/fetcher"
 	"strings"
 
-	"github.com/SzmySama/ACMBot/app/fetcher"
-	"github.com/SzmySama/ACMBot/app/model/db"
-	"github.com/SzmySama/ACMBot/app/render"
-	"github.com/SzmySama/ACMBot/app/types"
-	"github.com/SzmySama/ACMBot/app/utils/config"
+	"github.com/YourSuzumiya/ACMBot/app/model/db"
+	"github.com/YourSuzumiya/ACMBot/app/render"
+	"github.com/YourSuzumiya/ACMBot/app/types"
+	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
@@ -38,7 +38,7 @@ var (
 )
 
 func allRaceHandler(ctx *zero.Ctx) {
-	allRace, err := fetcher.GetAndFetchRaces(ctx)
+	allRace, err := fetcher2.GetAndFetchRaces(ctx)
 	if err != nil {
 		ctx.Send("出错惹🥹: " + err.Error())
 	}
@@ -46,7 +46,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 }
 
 func codeforcesUserProfile(handle string, ctx *zero.Ctx) {
-	if err := fetcher.UpdateCodeforcesUserSubmissionsAndRating(handle); err != nil {
+	if err := fetcher2.UpdateCodeforcesUserSubmissionsAndRating(handle); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
 		return
 	}
@@ -80,7 +80,7 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 
 func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
 	dbConnection := db.GetDBConnection()
-	if err := fetcher.UpdateCodeforcesUserRatingChanges(handle); err != nil {
+	if err := fetcher2.UpdateCodeforcesUserRatingChanges(handle); err != nil {
 		ctx.Send(fmt.Sprintf("没有查到%s🥺: %v", handle, err))
 		logrus.Warnf("没有查到%s🥺: %v", handle, err)
 		return
@@ -119,7 +119,7 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 }
 
 func codeforcesRaceHandler(ctx *zero.Ctx) {
-	allRace, err := fetcher.GetAndFetchRaces(ctx)
+	allRace, err := fetcher2.GetAndFetchRaces(ctx)
 	if err != nil {
 		ctx.Send("出错惹🥵: " + err.Error())
 	}
@@ -204,7 +204,7 @@ func menuHandler(ctx *zero.Ctx) {
 		"2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线\n"+
 		"3.近期比赛，用于查询近期的比赛数据，数据来源于sdutacm.cn\n"+
 		"4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com\n"+
-		"项目地址https://github.com/SzmySama/ACMBot，喜欢可以加个Star支持一下\n"+
+		"项目地址https://github.com/YourSuzumiya/ACMBot，喜欢可以加个Star支持一下\n"+
 		"Bot可以直接拉到自己群里用哦",
 		CommandPrefix,
 	))
