@@ -20,13 +20,13 @@ func GetDBConnection() *gorm.DB {
 	return db
 }
 
-func InitDB(autoCreate bool) error {
+func init() {
 	cfg := config.GetConfig().DataBase
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.DatabaseName)
 	var err error
 	if db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{}); err != nil {
-		if !autoCreate {
-			return fmt.Errorf("failed to connect to DB: %w", err)
+		if !cfg.AutoCreateDB {
+			log.Fatalf("failed to connect to DB: %v", err)
 		}
 
 		var mysqlErr *mysqldriver.MySQLError
@@ -41,7 +41,7 @@ func InitDB(autoCreate bool) error {
 			*/
 
 			// Connect to server without DB
-			dsnNoDB := fmt.Sprintf("%s:%s@tcp(%s:%d)/",
+			dsnNoDB := fmt.Sprintf("%s:%s@tcp(%s:%d)/?charset=utf8mb4&parseTime=True&loc=Local",
 				cfg.Username, cfg.Password, cfg.Host, cfg.Port)
 			db, err = gorm.Open(mysql.Open(dsnNoDB), &gorm.Config{})
 			if err != nil {
@@ -68,7 +68,6 @@ func InitDB(autoCreate bool) error {
 			}
 		}
 	}
-	return nil
 }
 
 func Migrate() error {

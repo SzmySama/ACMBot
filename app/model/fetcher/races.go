@@ -87,7 +87,7 @@ func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 		}
 
 		// 近期cf直接从codeforces的API获取, 下面在获取codeforces
-		codeforcesRaces, err := FetchCodeforcesContestList(false)
+		codeforcesRaces, err := FetchCodeforcesContestList_(false)
 		if err != nil {
 			return &cacheRace, fmt.Errorf("failed to fetch codeforces: %v", err)
 		}
@@ -112,4 +112,8 @@ func GetAndFetchRaces(ctx *zero.Ctx) (*CacheRaceData, error) {
 	}
 
 	return &cacheRace, nil
+}
+
+func updater() {
+
 }

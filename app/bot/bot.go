@@ -46,7 +46,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 }
 
 func codeforcesUserProfile(handle string, ctx *zero.Ctx) {
-	if err := fetcher2.UpdateCodeforcesUserSubmissionsAndRating(handle); err != nil {
+	if err := fetcher2.UpdateCodeforcesUserSubmissionsAndRating_(handle); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
 		return
 	}
@@ -80,7 +80,7 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 
 func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
 	dbConnection := db.GetDBConnection()
-	if err := fetcher2.UpdateCodeforcesUserRatingChanges(handle); err != nil {
+	if err := fetcher2.UpdateCodeforcesUserRatingChanges_(handle); err != nil {
 		ctx.Send(fmt.Sprintf("没有查到%s🥺: %v", handle, err))
 		logrus.Warnf("没有查到%s🥺: %v", handle, err)
 		return

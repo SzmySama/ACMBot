@@ -7,29 +7,12 @@ import (
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
-type codeforcesResponse[T any] struct {
-	Status  string `json:"status"`
-	Result  T      `json:"result"`
-	Comment string `json:"comment"`
-}
-
 type Race struct {
 	Source    string    `json:"source"`
 	Name      string    `json:"name"`
 	Link      string    `json:"link"`
 	StartTime time.Time `json:"start_time"`
 	EndTime   time.Time `json:"end_time"`
-}
-
-type CodeforcesRace struct {
-	ID                  int    `json:"id"`
-	Name                string `json:"name"`
-	Type                string `json:"type"`
-	Phase               string `json:"phase"`
-	Frozen              bool   `json:"frozen"`
-	DurationSeconds     int    `json:"durationSeconds"`
-	StartTimeSeconds    int64  `json:"startTimeSeconds"`
-	RelativeTimeSeconds int    `json:"relativeTimeSeconds"`
 }
 
 type CacheRaceData struct {

@@ -47,6 +47,7 @@ type DataBaseConfigStruct struct {
 	Password     string `toml:"password"`
 	DatabaseName string `toml:"database_name"`
 	DriverName   string `toml:"driver_name"`
+	AutoCreateDB bool   `toml:"auto_create_db"`
 }
 
 type CodeforcesConfigStruct struct {
