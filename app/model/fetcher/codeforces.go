@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"math/rand"
@@ -28,6 +29,8 @@ const (
 var (
 	dbc *gorm.DB // db connection
 	cfg *config.CodeforcesConfigStruct
+
+	updatingUser sync.Map
 )
 
 func init() {
@@ -418,6 +421,12 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 }
 
 func UpdateDBCodeforcesUser(handle string) error {
+	var mu sync.Mutex
+	loadedMu, _ := updatingUser.LoadOrStore(handle, &mu)
+	mu = *loadedMu.(*sync.Mutex)
+	mu.Lock()
+	defer mu.Unlock()
+
 	var dbUser db.CodeforcesUser
 	if result := dbc.Where("handle = ?", handle).First(&dbUser); result.Error != nil {
 		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
