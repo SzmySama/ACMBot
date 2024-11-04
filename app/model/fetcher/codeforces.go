@@ -443,15 +443,27 @@ func UpdateDBCodeforcesUser(handle string) error {
 
 	// todo:直接更新，而不是调用上述函数更新，避免多次查询用户数据
 
-	if err := UpdateDBCodeforcesUserInfo(handle); err != nil {
-		return fmt.Errorf("failed to update DB codeforces user: %v", err)
+	var wg sync.WaitGroup
+	var err error
+
+	for _, i := range []func(handle string) error{
+		UpdateDBCodeforcesUserInfo,
+		UpdateDBCodeforcesRatingChanges,
+		UpdateDBCodeforcesSubmissions,
+	} {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if e := i(handle); e != nil {
+				err = fmt.Errorf("failed to update DB codeforces user: %v", e)
+			}
+		}()
 	}
-	if err := UpdateDBCodeforcesRatingChanges(handle); err != nil {
-		return fmt.Errorf("failed to update DB codeforces rating changes: %v", err)
+	wg.Wait()
+	if err != nil {
+		return err
 	}
-	if err := UpdateDBCodeforcesSubmissions(handle); err != nil {
-		return fmt.Errorf("failed to update DB codeforces submissions: %v", err)
-	}
+
 	return nil
 }
 
