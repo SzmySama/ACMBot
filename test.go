@@ -17,7 +17,7 @@ func main() {
 		&db.CodeforcesRatingChange{},
 	)
 
-	err := fetcher.UpdateDBCodeforcesSubmissions("katago")
+	err := fetcher.UpdateDBCodeforcesUser("katago")
 	if err != nil {
 		logrus.Errorf("failed to update codeforces user: %v", err)
 	}

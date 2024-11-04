@@ -8,23 +8,24 @@ import (
 type CodeforcesSubmissionStatus string
 
 const (
-	CodeforcesSubmissionStatusFailed                  CodeforcesSubmissionStatus = "FAILED"
-	CodeforcesSubmissionStatusOk                      CodeforcesSubmissionStatus = "OK"
-	CodeforcesSubmissionStatusPartial                 CodeforcesSubmissionStatus = "PARTIAL"
-	CodeforcesSubmissionStatusCompilationError        CodeforcesSubmissionStatus = "COMPILATION_ERROR"
-	CodeforcesSubmissionStatusRuntimeError            CodeforcesSubmissionStatus = "RUNTIME_ERROR"
-	CodeforcesSubmissionStatusWrongAnswer             CodeforcesSubmissionStatus = "WRONG_ANSWER"
-	CodeforcesSubmissionStatusPresentationError       CodeforcesSubmissionStatus = "PRESENTATION_ERROR"
-	CodeforcesSubmissionStatusTimeLimitExceeded       CodeforcesSubmissionStatus = "TIME_LIMIT_EXCEEDED"
-	CodeforcesSubmissionStatusMemoryLimitExceeded     CodeforcesSubmissionStatus = "MEMORY_LIMIT_EXCEEDED"
-	CodeforcesSubmissionStatusIdlenessLimitExceeded   CodeforcesSubmissionStatus = "IDLENESS_LIMIT_EXCEEDED"
-	CodeforcesSubmissionStatusSecurityViolated        CodeforcesSubmissionStatus = "SECURITY_VIOLATED"
-	CodeforcesSubmissionStatusCrashed                 CodeforcesSubmissionStatus = "CRASHED"
-	CodeforcesSubmissionStatusInputPreparationCrashed CodeforcesSubmissionStatus = "INPUT_PREPARATION_CRASHED"
-	CodeforcesSubmissionStatusChallenged              CodeforcesSubmissionStatus = "CHALLENGED"
-	CodeforcesSubmissionStatusSkipped                 CodeforcesSubmissionStatus = "SKIPPED"
-	CodeforcesSubmissionStatusTesting                 CodeforcesSubmissionStatus = "TESTING"
-	CodeforcesSubmissionStatusRejected                CodeforcesSubmissionStatus = "REJECTED"
+	CodeforcesSubmissionStatusOk CodeforcesSubmissionStatus = "OK"
+
+	//CodeforcesSubmissionStatusFailed                  CodeforcesSubmissionStatus = "FAILED"
+	//CodeforcesSubmissionStatusPartial                 CodeforcesSubmissionStatus = "PARTIAL"
+	//CodeforcesSubmissionStatusCompilationError        CodeforcesSubmissionStatus = "COMPILATION_ERROR"
+	//CodeforcesSubmissionStatusRuntimeError            CodeforcesSubmissionStatus = "RUNTIME_ERROR"
+	//CodeforcesSubmissionStatusWrongAnswer             CodeforcesSubmissionStatus = "WRONG_ANSWER"
+	//CodeforcesSubmissionStatusPresentationError       CodeforcesSubmissionStatus = "PRESENTATION_ERROR"
+	//CodeforcesSubmissionStatusTimeLimitExceeded       CodeforcesSubmissionStatus = "TIME_LIMIT_EXCEEDED"
+	//CodeforcesSubmissionStatusMemoryLimitExceeded     CodeforcesSubmissionStatus = "MEMORY_LIMIT_EXCEEDED"
+	//CodeforcesSubmissionStatusIdlenessLimitExceeded   CodeforcesSubmissionStatus = "IDLENESS_LIMIT_EXCEEDED"
+	//CodeforcesSubmissionStatusSecurityViolated        CodeforcesSubmissionStatus = "SECURITY_VIOLATED"
+	//CodeforcesSubmissionStatusCrashed                 CodeforcesSubmissionStatus = "CRASHED"
+	//CodeforcesSubmissionStatusInputPreparationCrashed CodeforcesSubmissionStatus = "INPUT_PREPARATION_CRASHED"
+	//CodeforcesSubmissionStatusChallenged              CodeforcesSubmissionStatus = "CHALLENGED"
+	//CodeforcesSubmissionStatusSkipped                 CodeforcesSubmissionStatus = "SKIPPED"
+	//CodeforcesSubmissionStatusTesting                 CodeforcesSubmissionStatus = "TESTING"
+	//CodeforcesSubmissionStatusRejected                CodeforcesSubmissionStatus = "REJECTED"
 )
 
 type CodeforcesUser struct {
@@ -69,8 +70,8 @@ type CodeforcesRatingChange struct {
 	NewRating int
 }
 
-func MigrateCodeforces(db *gorm.DB) error {
-	return db.AutoMigrate(
+func MigrateCodeforces() error {
+	return GetDBConnection().AutoMigrate(
 		&CodeforcesUser{},
 		&CodeforcesProblem{},
 		&CodeforcesSubmission{},

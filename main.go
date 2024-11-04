@@ -9,15 +9,9 @@ import (
 
 func main() {
 	logger.Init()
-	err := db.InitDB(true)
+	err := db.MigrateCodeforces()
 	if err != nil {
-		logrus.Errorf("failed to init db: %v", err)
-		return
-	}
-	err = db.Migrate()
-	if err != nil {
-		logrus.Errorf("failed to migrate db: %v", err)
-		return
+		logrus.Fatal(err)
 	}
 	bot.Start()
 }

@@ -16,7 +16,6 @@ import (
 	"math/rand"
 
 	"github.com/YourSuzumiya/ACMBot/app/model/db"
-	"github.com/YourSuzumiya/ACMBot/app/types"
 	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -108,7 +107,7 @@ type CodeforcesRace struct {
 	Type                string `json:"type"`
 	Phase               string `json:"phase"`
 	Frozen              bool   `json:"frozen"`
-	DurationSeconds     int    `json:"durationSeconds"`
+	DurationSeconds     int64  `json:"durationSeconds"`
 	StartTimeSeconds    int64  `json:"startTimeSeconds"`
 	RelativeTimeSeconds int    `json:"relativeTimeSeconds"`
 }
@@ -418,155 +417,33 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 	return nil
 }
 
+func UpdateDBCodeforcesUser(handle string) error {
+	var dbUser db.CodeforcesUser
+	if result := dbc.Where("handle = ?", handle).First(&dbUser); result.Error != nil {
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return result.Error
+		}
+		if err := CreateDBCodeforcesUser(handle); err != nil {
+			return fmt.Errorf("failed to update DB codeforces user: %v", err)
+		}
+	}
+
+	if time.Since(dbUser.UpdatedAt).Hours() <= 4 {
+		return nil
+	}
+
+	// todo:直接更新，而不是调用上述函数更新，避免多次查询用户数据
+
+	if err := UpdateDBCodeforcesUserInfo(handle); err != nil {
+		return fmt.Errorf("failed to update DB codeforces user: %v", err)
+	}
+	if err := UpdateDBCodeforcesRatingChanges(handle); err != nil {
+		return fmt.Errorf("failed to update DB codeforces rating changes: %v", err)
+	}
+	if err := UpdateDBCodeforcesSubmissions(handle); err != nil {
+		return fmt.Errorf("failed to update DB codeforces submissions: %v", err)
+	}
+	return nil
+}
+
 /* ------------------------------------------- */
-
-func FetchCodeforcesUsersInfo_(handles []string, checkHistoricHandles bool) (user *[]types.User, err error) {
-	return fetchCodeforcesAPI[[]types.User]("user.info", map[string]any{
-		"handles":              strings.Join(handles, ";"),
-		"checkHistoricHandles": checkHistoricHandles,
-	})
-}
-
-func FetchCodeforcesUserSubmissions_(handle string, from, count int) (*[]types.Submission, error) {
-	return fetchCodeforcesAPI[[]types.Submission]("user.status", map[string]any{
-		"handle": handle,
-		"from":   from,
-		"count":  count,
-	})
-}
-
-func FetchCodeforcesUserRatingChanges_(handle string) (*[]types.RatingChange, error) {
-	return fetchCodeforcesAPI[[]types.RatingChange]("user.rating", map[string]any{
-		"handle": handle,
-	})
-}
-
-func FetchCodeforcesContestList_(gym bool) (*[]CodeforcesRace, error) {
-	return fetchCodeforcesAPI[[]CodeforcesRace]("contest.list", map[string]any{
-		"gym": gym,
-	})
-}
-
-func UpdateCodeforcesUserSubmissionsAndRating_(handle string) error {
-	/*
-		1. 获取用户，不存在则返回
-		2. 获取Submissions的更新时间
-		3. fetch用户的提交记录，更新数据库相关数据
-	*/
-	dbConnection := db.GetDBConnection()
-	var user types.User
-	if result := dbConnection.Where("handle = ?", handle).First(&user); result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			if err := UpdateCodeforcesUserInfo_(handle); err != nil {
-				return err
-			}
-			if err := dbConnection.Where("handle = ?", handle).First(&user).Error; err != nil {
-				return fmt.Errorf("panic err while fetch user: Unexpected brach: %v", err)
-			}
-		} else {
-			return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
-		}
-	}
-	// fetch
-
-	if time.Since(user.SubmissionUpdatedAt).Hours() <= 24 {
-		return nil
-	}
-
-	var fetchCount = 1
-	var newSubmissions []types.Submission
-	var correctLastSubmissionTimeStamp time.Time
-
-	for {
-		res, err := FetchCodeforcesUserSubmissions_(handle, fetchCount, SignalFetchCount)
-		if err != nil {
-			return err
-		}
-		if len(*res) == 0 {
-			break
-		}
-		correctLastSubmissionTimeStamp = (*res)[len(*res)-1].At
-
-		if correctLastSubmissionTimeStamp.Sub(user.SubmissionUpdatedAt).Seconds() > 0 {
-			// 当前获取到的数据和原始数据没有交集
-			newSubmissions = append(newSubmissions, *res...)
-			fetchCount += SignalFetchCount
-			continue
-		} else {
-			for _, v := range *res {
-				if v.At.Sub(user.SubmissionUpdatedAt).Seconds() <= 0 {
-					break
-				}
-				newSubmissions = append(newSubmissions, v)
-			}
-			break
-		}
-	}
-
-	for _, v := range newSubmissions {
-		if v.Status == types.SubmissionStatusOk {
-			user.Solved++
-		}
-	}
-
-	user.Submissions = append(newSubmissions, user.Submissions...)
-	user.SubmissionUpdatedAt = time.Now()
-
-	// 更新rating数据
-	if u, err := FetchCodeforcesUsersInfo_([]string{handle}, false); err != nil {
-		return fmt.Errorf("failed to update cf user: %v", err)
-	} else {
-		user.Rating = (*u)[0].Rating
-	}
-
-	// 更新数据库数据
-	if err := dbConnection.Save(&user).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func UpdateCodeforcesUserRatingChanges_(handle string) error {
-	dbc := db.GetDBConnection()
-	var user types.User
-	if result := dbc.Where("handle = ?", handle).First(&user); result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			if err := UpdateCodeforcesUserInfo_(handle); err != nil {
-				return err
-			}
-
-			if err := dbc.Where("handle = ?", handle).First(&user).Error; err != nil {
-				return fmt.Errorf("panic err while fetch user: Unexpected brach: %v", err)
-			}
-
-		} else {
-			return fmt.Errorf("failed to find user %s in DB: %v", handle, result.Error)
-		}
-	}
-
-	if time.Since(user.RatingChangeUpdateAt) <= 30*time.Minute {
-		return nil
-	}
-
-	ratingChanges, err := FetchCodeforcesUserRatingChanges_(handle)
-	if err != nil {
-		return err
-	}
-	user.RatingChanges = *ratingChanges
-	if length := len(*ratingChanges); length > 0 {
-		user.RatingChangeUpdateAt = time.Now()
-	}
-	if err := dbc.Save(&user).Error; err != nil {
-		return err
-	}
-	return nil
-}
-
-func UpdateCodeforcesUserInfo_(handle string) error {
-
-	user, err := FetchCodeforcesUsersInfo_([]string{handle}, false)
-	if err != nil {
-		return fmt.Errorf("failed to update cf user: %v", err)
-	}
-	return db.GetDBConnection().Save(&((*user)[0])).Error
-}

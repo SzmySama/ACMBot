@@ -25,21 +25,20 @@ var (
 			DriverName:   "MariaDB",
 			Password:     "",
 		},
-		RWS: ReverseWebsocketConfigStruct{
-			Host:        "0.0.0.0",
-			Port:        5140,
+		WS: WebsocketConfigStruct{
+			Host:        "localhost",
+			Port:        3001,
 			ChannelSize: 1000,
 		},
 	}
 )
 
-type ReverseWebsocketConfigStruct struct {
+type WebsocketConfigStruct struct {
 	Host        string `toml:"host"`
 	Port        int32  `toml:"port"`
 	Token       string `toml:"token"`
 	ChannelSize int32  `toml:"channel_size"`
 }
-
 type DataBaseConfigStruct struct {
 	Host         string `toml:"host"`
 	Port         int    `toml:"port"`
@@ -56,9 +55,9 @@ type CodeforcesConfigStruct struct {
 }
 
 type ConfigStruct struct {
-	Codeforces CodeforcesConfigStruct       `toml:"Codeforces"`
-	DataBase   DataBaseConfigStruct         `toml:"DataBase"`
-	RWS        ReverseWebsocketConfigStruct `toml:"ReverseWebsocket"`
+	Codeforces CodeforcesConfigStruct `toml:"Codeforces"`
+	DataBase   DataBaseConfigStruct   `toml:"DataBase"`
+	WS         WebsocketConfigStruct  `toml:"Websocket"`
 }
 
 func writeConfig(config *ConfigStruct) error {
@@ -179,8 +178,4 @@ func GetConfig() *ConfigStruct {
 	})
 
 	return &config
-}
-
-func Init() {
-	GetConfig()
 }

@@ -1,20 +1,16 @@
 package bot
 
 import (
-	"errors"
 	"fmt"
-	fetcher2 "github.com/YourSuzumiya/ACMBot/app/model/fetcher"
-	"strings"
-
 	"github.com/YourSuzumiya/ACMBot/app/model/db"
+	"github.com/YourSuzumiya/ACMBot/app/model/fetcher"
 	"github.com/YourSuzumiya/ACMBot/app/render"
-	"github.com/YourSuzumiya/ACMBot/app/types"
 	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
 	"github.com/wdvxdr1123/ZeroBot/message"
-	"gorm.io/gorm"
+	"strings"
 )
 
 const (
@@ -23,35 +19,26 @@ const (
 )
 
 var (
-	cfg     = config.GetConfig().RWS
+	cfg     = config.GetConfig().WS
 	zeroCfg = zero.Config{
 		NickName:      []string{"bot"},
 		CommandPrefix: CommandPrefix,
 		SuperUsers:    []int64{1549992006},
 		Driver: []zero.Driver{
-			driver.NewWebSocketServer(
-				int(cfg.ChannelSize),
-				fmt.Sprintf("ws://%s:%d/onebot", cfg.Host, cfg.Port),
+			driver.NewWebSocketClient(
+				fmt.Sprintf("ws://%s:%d", cfg.Host, cfg.Port),
 				cfg.Token),
 		},
 	}
 )
 
-func allRaceHandler(ctx *zero.Ctx) {
-	allRace, err := fetcher2.GetAndFetchRaces(ctx)
-	if err != nil {
-		ctx.Send("出错惹🥹: " + err.Error())
-	}
-	ctx.Send(allRace.AllRacesMessageSegments)
-}
-
 func codeforcesUserProfile(handle string, ctx *zero.Ctx) {
-	if err := fetcher2.UpdateCodeforcesUserSubmissionsAndRating_(handle); err != nil {
+	if err := fetcher.UpdateDBCodeforcesUser(handle); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
 		return
 	}
 
-	var user types.User
+	var user db.CodeforcesUser
 
 	if err := db.GetDBConnection().Where("handle = ?", handle).First(&user).Error; err != nil {
 		ctx.Send(fmt.Sprintf("DB Err😭: %v", err))
@@ -79,22 +66,15 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 }
 
 func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
-	dbConnection := db.GetDBConnection()
-	if err := fetcher2.UpdateCodeforcesUserRatingChanges_(handle); err != nil {
-		ctx.Send(fmt.Sprintf("没有查到%s🥺: %v", handle, err))
-		logrus.Warnf("没有查到%s🥺: %v", handle, err)
-		return
-	}
-	var user types.User
-	if err := dbConnection.Where("handle = ?", handle).First(&user).Error; err != nil {
-		ctx.Send(fmt.Sprintf("DB Err😭: %v", err))
-		logrus.Warnf("DB Err😭: %v", err)
+	err := fetcher.UpdateDBCodeforcesUser(handle)
+	if err != nil {
+		ctx.Send("更新用户`" + handle + "`的数据失败惹🥹：" + err.Error())
 		return
 	}
 
-	if len(user.RatingChanges) <= 0 {
-		ctx.Send(handle + "貌似还没打过比赛")
-		return
+	var user db.CodeforcesUser
+	if err := db.GetDBConnection().Preload("RatingChanges").Where("handle = ?", handle).First(&user).Error; err != nil {
+		ctx.Send("DB Err😰: " + err.Error())
 	}
 
 	imgData, err := render.CodeforcesRatingChanges(user.RatingChanges, handle)
@@ -118,83 +98,20 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 	}
 }
 
+func allRaceHandler(ctx *zero.Ctx) {
+	race := fetcher.GetStuAcmRaces()
+	if race.Err != nil {
+		ctx.Send("检查到错误，数据可能并未及时更新，上次更新时间: " + race.LastUpdate.String() + "\nErr: " + race.Err.Error())
+	}
+	ctx.Send(race.MessageSegments)
+}
+
 func codeforcesRaceHandler(ctx *zero.Ctx) {
-	allRace, err := fetcher2.GetAndFetchRaces(ctx)
-	if err != nil {
-		ctx.Send("出错惹🥵: " + err.Error())
+	race := fetcher.GetCodeforcesRaces()
+	if race.Err != nil {
+		ctx.Send("检查到错误，数据可能并未及时更新，上次更新时间: " + race.LastUpdate.String() + "\nErr: " + race.Err.Error())
 	}
-	if len(allRace.CodeforcesRacesMessageSegments) > 0 {
-		ctx.Send(allRace.CodeforcesRacesMessageSegments)
-	} else {
-		ctx.Send("近期没有codeforces")
-	}
-}
-
-func bindCodeforcesHandler(ctx *zero.Ctx) {
-	dbConnection := db.GetDBConnection()
-	ID := ctx.Event.Sender.ID
-	handle := strings.Split(ctx.MessageString(), " ")[1]
-
-	var err error
-	var user types.QQUser
-	err = dbConnection.FirstOrCreate(&user, types.QQUser{ID: ID}).Error
-	if err != nil {
-		ctx.Send(fmt.Sprintf("绑定失败😭: %v", err))
-		return
-	}
-	user.CodeforcesHandle = handle
-	err = dbConnection.Save(&user).Error
-	if err != nil {
-		ctx.Send(fmt.Sprintf("绑定失败😭: %v", err))
-		return
-	}
-	ctx.Send("绑定成功")
-}
-
-func myCodeforcesHandler(ctx *zero.Ctx) {
-	dbConnection := db.GetDBConnection()
-	ID := ctx.Event.Sender.ID
-
-	var handle string
-	err := dbConnection.Model(&types.QQUser{}).
-		Select("CodeforcesHandle").
-		Where("id = ?", ID).
-		Limit(1).
-		Scan(&handle).
-		Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.Send("没有查询到你的绑定信息，快来绑定吧🥰")
-			return
-		}
-		ctx.Send(fmt.Sprintf("DB Err😰: %v", err))
-		return
-	}
-
-	codeforcesUserProfile(handle, ctx)
-}
-
-func myRatingHandler(ctx *zero.Ctx) {
-	dbConnection := db.GetDBConnection()
-	ID := ctx.Event.Sender.ID
-
-	var handle string
-	err := dbConnection.Model(&types.QQUser{}).
-		Select("CodeforcesHandle").
-		Where("id = ?", ID).
-		Limit(1).
-		Scan(&handle).
-		Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			ctx.Send("没有查询到你的绑定信息，快来绑定吧🥰")
-			return
-		}
-		ctx.Send(fmt.Sprintf("DB Err😰: %v", err))
-		return
-	}
-
-	processCodeforcesRatingChange(handle, ctx)
+	ctx.Send(race.MessageSegments)
 }
 
 func menuHandler(ctx *zero.Ctx) {
@@ -219,13 +136,15 @@ func init() {
 
 	zero.OnCommand("cf").Handle(codeforcesUserProfileHandler)
 
-	zero.OnCommand("绑定cf").Handle(bindCodeforcesHandler)
-	zero.OnCommand("我的cf").Handle(myCodeforcesHandler)
-	zero.OnCommand("我的rt").Handle(myRatingHandler)
-
 	zero.OnCommand("菜单").Handle(menuHandler)
+	zero.OnCommand("help").Handle(menuHandler)
 }
 
 func Start() {
-	zero.RunAndBlock(&zeroCfg, nil)
+	zero.RunAndBlock(&zeroCfg, func() {
+		zero.RangeBot(func(_ int64, ctx *zero.Ctx) bool {
+			go fetcher.Updater(ctx)
+			return false
+		})
+	})
 }

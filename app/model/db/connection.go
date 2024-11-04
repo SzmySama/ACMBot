@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/YourSuzumiya/ACMBot/app/types"
 	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	mysqldriver "github.com/go-sql-driver/mysql"
 	log "github.com/sirupsen/logrus"
@@ -49,10 +48,7 @@ func init() {
 			}
 
 			// Create DB
-			SQLCreatDB := fmt.Sprintf(`
-					CREATE DATABASE IF NOT EXISTS %s
-				`, cfg.DatabaseName)
-			err = db.Exec(SQLCreatDB).Error
+			err = db.Exec("CREATE DATABASE IF NOT EXISTS ?", cfg.DatabaseName).Error
 			if err != nil {
 				log.Fatalf("Failed to create DataBase: %v", err)
 			}
@@ -68,12 +64,4 @@ func init() {
 			}
 		}
 	}
-}
-
-func Migrate() error {
-	err := db.AutoMigrate(&types.User{}, &types.QQUser{})
-	if err != nil {
-		return fmt.Errorf("failed to migrate DB: %w", err)
-	}
-	return nil
 }

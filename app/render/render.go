@@ -3,12 +3,12 @@ package render
 import (
 	"bytes"
 	"fmt"
+	"github.com/YourSuzumiya/ACMBot/app/model/db"
 	"html/template"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/YourSuzumiya/ACMBot/app/types"
 	"github.com/playwright-community/playwright-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -80,12 +80,9 @@ func Html(PageOpt *playwright.BrowserNewPageOptions, HTMLOpt *HtmlOptions) ([]by
 	})
 }
 
-func CodeforcesUserProfile(user types.User) ([]byte, error) {
+func CodeforcesUserProfile(user db.CodeforcesUser) ([]byte, error) {
 	var buffer bytes.Buffer
-	if err := codeforcesUserProfileTemplate.Execute(&buffer, CodeforcesUserProfileData{
-		User:  user,
-		Level: ConvertRatingToLevel(user.Rating),
-	}); err != nil {
+	if err := codeforcesUserProfileTemplate.Execute(&buffer, DB2RenderUser(user)); err != nil {
 		return nil, fmt.Errorf("failed to execute template: %v", err)
 	}
 	return Html(
@@ -102,14 +99,15 @@ func CodeforcesUserProfile(user types.User) ([]byte, error) {
 	)
 }
 
-func CodeforcesRatingChanges(ratingChanges []types.RatingChange, handle string) ([]byte, error) {
+func CodeforcesRatingChanges(ratingChanges []db.CodeforcesRatingChange, handle string) ([]byte, error) {
 	var buffer bytes.Buffer
 	if err := codeforcesRatingChangeTemplate.Execute(&buffer, CodeforcesRatingChangesData{
-		RatingChangesMetaData: ratingChanges,
+		RatingChangesMetaData: DB2RenderCodeforcesRatingChanges(ratingChanges),
 		Handle:                handle,
 	}); err != nil {
 		return nil, fmt.Errorf("failed to execute template: %v", err)
 	}
+
 	return Html(
 		&playwright.BrowserNewPageOptions{
 			DeviceScaleFactor: &[]float64{2.0}[0],
