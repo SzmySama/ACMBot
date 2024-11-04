@@ -73,7 +73,7 @@ func (r *CodeforcesRatingChange) MarshalJSON() ([]byte, error) {
 }
 
 func DB2RenderCodeforcesRatingChanges(changes []db.CodeforcesRatingChange) []CodeforcesRatingChange {
-	var result []CodeforcesRatingChange
+	result := make([]CodeforcesRatingChange, 0, len(changes))
 	for _, change := range changes {
 		result = append(result, CodeforcesRatingChange{
 			At:        change.At,

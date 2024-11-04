@@ -80,6 +80,8 @@ func Html(PageOpt *playwright.BrowserNewPageOptions, HTMLOpt *HtmlOptions) ([]by
 	})
 }
 
+// todo: 统一render参数
+
 func CodeforcesUserProfile(user db.CodeforcesUser) ([]byte, error) {
 	var buffer bytes.Buffer
 	if err := codeforcesUserProfileTemplate.Execute(&buffer, DB2RenderUser(user)); err != nil {

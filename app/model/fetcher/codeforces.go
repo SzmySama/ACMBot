@@ -308,12 +308,16 @@ func UpdateDBCodeforcesRatingChanges(handle string) error {
 	}
 
 	// todo: 使用二分查找
-	firstNewRatingChangeIndex := 0
+	firstNewRatingChangeIndex := -1
 	for k, v := range *fetchRatingChanges {
 		if v.At.After(lastDBRatingChange.At) {
 			firstNewRatingChangeIndex = k
 			break
 		}
+	}
+
+	if firstNewRatingChangeIndex == -1 {
+		return nil
 	}
 
 	for _, v := range (*fetchRatingChanges)[firstNewRatingChangeIndex:] {
