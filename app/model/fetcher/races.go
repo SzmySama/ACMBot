@@ -40,6 +40,9 @@ func (r *Race) String() string {
 	} else {
 		dStr = fmt.Sprintf("%d小时", h)
 	}
+
+	leftTime := r.StartTime.Sub(time.Now())
+
 	return fmt.Sprintf(
 		""+
 			"比赛来源: %s\n"+
@@ -50,7 +53,7 @@ func (r *Race) String() string {
 			"传送门🌈: %s",
 		r.Source,
 		r.Name,
-		r.StartTime.Sub(time.Now()).String(),
+		fmt.Sprintf("%02d天%02d小时%02d分钟", int(leftTime.Hours())/24, int(leftTime.Hours())%24, int(leftTime.Minutes())%60),
 		r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
 		dStr,
 		r.Link,
