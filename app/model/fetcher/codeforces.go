@@ -374,7 +374,7 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 		}
 
 		for _, v := range *res {
-			if !v.At.After(lastSubmitTimeInRes) {
+			if !v.At.After(lastSubmitTimeInDB) {
 				break
 			}
 			newSubmissions = append(newSubmissions, v)
