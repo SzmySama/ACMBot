@@ -33,4 +33,4 @@ go run ./main.go
 
 ## 与NapCat联通
 
-配置文件(onebot.json)内开启反向websocket，地址类似于ws://localhost:8088/onebot/v11/ws
+配置文件(onebot.json)内开启websocket，地址类似于`ws://localhost:8088`
