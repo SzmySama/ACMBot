@@ -425,9 +425,9 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 }
 
 func UpdateDBCodeforcesUser(handle string) error {
-	var mu sync.Mutex
-	loadedMu, _ := updatingUser.LoadOrStore(handle, &mu)
-	mu = *loadedMu.(*sync.Mutex)
+	mu := &sync.Mutex{}
+	loadedMu, _ := updatingUser.LoadOrStore(handle, mu)
+	mu = loadedMu.(*sync.Mutex)
 	mu.Lock()
 	defer mu.Unlock()
 

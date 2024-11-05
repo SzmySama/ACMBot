@@ -32,7 +32,7 @@ var (
 	}
 )
 
-func codeforcesUserProfile(handle string, ctx *zero.Ctx) {
+func processCodeforcesUserProfile(handle string, ctx *zero.Ctx) {
 	if err := fetcher.UpdateDBCodeforcesUser(handle); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
 		return
@@ -55,13 +55,17 @@ func codeforcesUserProfile(handle string, ctx *zero.Ctx) {
 
 func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	if len(handles) > QueryLimit {
-		ctx.Send("发这么多会坏掉的🥰")
-		return
-	}
-
-	for _, handle := range handles {
-		go codeforcesUserProfile(handle, ctx)
+	count := 1
+	for _, i := range handles {
+		if i == "" {
+			continue
+		}
+		if count > QueryLimit {
+			ctx.Send("参数太多了🥰，后面的就不查了哦")
+			return
+		}
+		count++
+		go processCodeforcesUserProfile(i, ctx)
 	}
 }
 
@@ -88,12 +92,16 @@ func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
 
 func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	if len(handles) > QueryLimit {
-		ctx.Send("发这么多会坏掉的🥰")
-		return
-	}
-
+	count := 1
 	for _, i := range handles {
+		if i == "" {
+			continue
+		}
+		if count > QueryLimit {
+			ctx.Send("参数太多了🥰，后面的就不查了哦")
+			return
+		}
+		count++
 		go processCodeforcesRatingChange(i, ctx)
 	}
 }
