@@ -33,7 +33,7 @@ var (
 )
 
 func processCodeforcesUserProfile(handle string, ctx *zero.Ctx) {
-	if err := fetcher.UpdateDBCodeforcesUser(handle); err != nil {
+	if err := fetcher.UpdateDBCodeforcesUser(handle, ctx); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
 		return
 	}
@@ -70,7 +70,7 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 }
 
 func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
-	err := fetcher.UpdateDBCodeforcesUser(handle)
+	err := fetcher.UpdateDBCodeforcesUser(handle, ctx)
 	if err != nil {
 		ctx.Send("更新用户`" + handle + "`的数据失败惹🥹：" + err.Error())
 		return

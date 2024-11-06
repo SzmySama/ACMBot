@@ -64,7 +64,3 @@ func getCallerInfo(skip int) string {
 	}
 	return runtime.FuncForPC(pc).Name()
 }
-
-func SetLevel(level logrus.Level) {
-	logrus.SetLevel(level)
-}

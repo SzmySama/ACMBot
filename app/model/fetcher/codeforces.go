@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	zero "github.com/wdvxdr1123/ZeroBot"
 	"io"
 	"net/http"
 	"sort"
@@ -23,7 +24,7 @@ import (
 )
 
 const (
-	SignalFetchCount = 500 // 单次查询Codeforces用户的Submission的数量
+	SignalFetchCount = 5000 // 单次查询Codeforces用户的Submission的数量
 )
 
 var (
@@ -130,8 +131,13 @@ func (r *codeforcesRatingChange) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
+var (
+	cfLock sync.Mutex
+)
 
+func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
+	cfLock.Lock()
+	defer cfLock.Unlock()
 	type codeforcesResponse[T any] struct {
 		/*
 			codeforces响应数据的基本格式
@@ -424,7 +430,7 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 	return nil
 }
 
-func UpdateDBCodeforcesUser(handle string) error {
+func UpdateDBCodeforcesUser(handle string, ctx *zero.Ctx) error {
 	mu := &sync.Mutex{}
 	loadedMu, _ := updatingUser.LoadOrStore(handle, mu)
 	mu = loadedMu.(*sync.Mutex)
@@ -444,6 +450,8 @@ func UpdateDBCodeforcesUser(handle string) error {
 	if time.Since(dbUser.UpdatedAt).Hours() <= 4 {
 		return nil
 	}
+
+	ctx.Send("正在更新用户数据，请稍后...")
 
 	// todo:直接更新，而不是调用上述函数更新，避免多次查询用户数据
 
