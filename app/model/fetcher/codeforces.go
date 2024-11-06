@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	NewUserSignalFetchCount = 5000 // 单次查询Codeforces用户的Submission的数量
+	NewUserSignalFetchCount = 10000 // 单次查询Codeforces用户的Submission的数量
 	SignalFetchCount        = 500
 )
 
@@ -340,23 +340,24 @@ func UpdateDBCodeforcesRatingChanges(handle string) error {
 
 func UpdateDBCodeforcesSubmissions(handle string) error {
 	var dbUser db.CodeforcesUser
-	var signalCount int
-	signalCount = SignalFetchCount
+	signalCount := SignalFetchCount
 	if result := dbc.Preload("Submissions", func(db *gorm.DB) *gorm.DB {
 		return db.Order("at DESC").Limit(1)
 	}).Where("handle = ?", handle).First(&dbUser); result.Error != nil {
 		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return result.Error
 		}
-		signalCount = NewUserSignalFetchCount
+		// NewUser
 		if err := CreateDBCodeforcesUser(handle); err != nil {
 			return fmt.Errorf("failed to update DB codeforces user: %v", err)
 		}
-		if result := dbc.Preload("Submissions", func(db *gorm.DB) *gorm.DB {
-			return db.Order("at DESC").Limit(1)
-		}).Where("handle = ?", handle).First(&dbUser); result.Error != nil {
+		if result := dbc.Where("handle = ?", handle).First(&dbUser); result.Error != nil {
 			return result.Error
 		}
+	}
+
+	if len(dbUser.Submissions) == 0 {
+		signalCount = NewUserSignalFetchCount
 	}
 
 	fetchCount := 1
@@ -460,23 +461,23 @@ func UpdateDBCodeforcesUser(handle string, ctx *zero.Ctx) error {
 
 	// todo:直接更新，而不是调用上述函数更新，避免多次查询用户数据
 
-	var wg sync.WaitGroup
+	//var wg sync.WaitGroup
 	var err error
 
 	for _, i := range []func(handle string) error{
-		UpdateDBCodeforcesUserInfo,
-		UpdateDBCodeforcesRatingChanges,
 		UpdateDBCodeforcesSubmissions,
+		UpdateDBCodeforcesRatingChanges,
 	} {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		//wg.Add(1)
+		//go func() {
+		func() {
+			//defer wg.Done()
 			if e := i(handle); e != nil {
 				err = fmt.Errorf("failed to update DB codeforces user: %v", e)
 			}
 		}()
 	}
-	wg.Wait()
+	//wg.Wait()
 	if err != nil {
 		return err
 	}

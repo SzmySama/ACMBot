@@ -32,6 +32,28 @@ var (
 	}
 )
 
+func init() {
+	zero.OnCommand("近期比赛").Handle(allRaceHandler)
+
+	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
+	zero.OnCommand("rating").Handle(codeforcesRatingChangeHandler)
+	zero.OnCommand("rt").Handle(codeforcesRatingChangeHandler)
+
+	zero.OnCommand("cf").Handle(codeforcesUserProfileHandler)
+
+	zero.OnCommand("菜单").Handle(menuHandler)
+	zero.OnCommand("help").Handle(menuHandler)
+}
+
+func Start() {
+	zero.RunAndBlock(&zeroCfg, func() {
+		zero.RangeBot(func(_ int64, ctx *zero.Ctx) bool {
+			go fetcher.Updater(ctx)
+			return false
+		})
+	})
+}
+
 func processCodeforcesUserProfile(handle string, ctx *zero.Ctx) {
 	if err := fetcher.UpdateDBCodeforcesUser(handle, ctx); err != nil {
 		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
@@ -79,6 +101,11 @@ func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
 	var user db.CodeforcesUser
 	if err := db.GetDBConnection().Preload("RatingChanges").Where("handle = ?", handle).First(&user).Error; err != nil {
 		ctx.Send("DB Err😰: " + err.Error())
+	}
+
+	if len(user.RatingChanges) == 0 {
+		ctx.Send("没有找到用户`" + handle + "`的rating记录，赛时加入比赛才计入rating哦")
+		return
 	}
 
 	imgData, err := render.CodeforcesRatingChanges(user.RatingChanges, handle)
@@ -133,26 +160,4 @@ func menuHandler(ctx *zero.Ctx) {
 		"Bot可以直接拉到自己群里用哦",
 		CommandPrefix,
 	))
-}
-
-func init() {
-	zero.OnCommand("近期比赛").Handle(allRaceHandler)
-
-	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
-	zero.OnCommand("rating").Handle(codeforcesRatingChangeHandler)
-	zero.OnCommand("rt").Handle(codeforcesRatingChangeHandler)
-
-	zero.OnCommand("cf").Handle(codeforcesUserProfileHandler)
-
-	zero.OnCommand("菜单").Handle(menuHandler)
-	zero.OnCommand("help").Handle(menuHandler)
-}
-
-func Start() {
-	zero.RunAndBlock(&zeroCfg, func() {
-		zero.RangeBot(func(_ int64, ctx *zero.Ctx) bool {
-			go fetcher.Updater(ctx)
-			return false
-		})
-	})
 }
