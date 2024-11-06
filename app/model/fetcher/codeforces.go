@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	SignalFetchCount = 5000 // 单次查询Codeforces用户的Submission的数量
+	NewUserSignalFetchCount = 5000 // 单次查询Codeforces用户的Submission的数量
+	SignalFetchCount        = 500
 )
 
 var (
@@ -339,12 +340,15 @@ func UpdateDBCodeforcesRatingChanges(handle string) error {
 
 func UpdateDBCodeforcesSubmissions(handle string) error {
 	var dbUser db.CodeforcesUser
+	var signalCount int
+	signalCount = SignalFetchCount
 	if result := dbc.Preload("Submissions", func(db *gorm.DB) *gorm.DB {
 		return db.Order("at DESC").Limit(1)
 	}).Where("handle = ?", handle).First(&dbUser); result.Error != nil {
 		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return result.Error
 		}
+		signalCount = NewUserSignalFetchCount
 		if err := CreateDBCodeforcesUser(handle); err != nil {
 			return fmt.Errorf("failed to update DB codeforces user: %v", err)
 		}
@@ -363,7 +367,7 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 	}
 
 	for {
-		res, err := FetchCodeforcesUserSubmissions(handle, fetchCount, SignalFetchCount)
+		res, err := FetchCodeforcesUserSubmissions(handle, fetchCount, signalCount)
 		if err != nil {
 			return err
 		}
@@ -372,7 +376,7 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 			break
 		}
 
-		fetchCount += SignalFetchCount
+		fetchCount += signalCount
 		lastSubmitTimeInRes := (*res)[len(*res)-1].At
 
 		if lastSubmitTimeInRes.After(lastSubmitTimeInDB) {
