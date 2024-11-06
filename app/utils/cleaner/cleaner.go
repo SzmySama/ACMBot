@@ -1,11 +1,10 @@
 package cleaner
 
 import (
+	"github.com/YourSuzumiya/ACMBot/app/model/render"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/YourSuzumiya/ACMBot/app/render"
 )
 
 func CleanWhileExit() {

@@ -61,7 +61,7 @@ func (r *Race) String() string {
 }
 
 type updatable interface {
-	updater(ctx *zero.Ctx)
+	update(ctx *zero.Ctx)
 	beforeUpdate()
 	afterUpdate()
 }
@@ -71,20 +71,18 @@ type cacheRace struct {
 	MessageSegments []message.MessageSegment
 	Err             error
 	LastUpdate      time.Time
-	sync.RWMutex
+	lock            sync.RWMutex
 }
 
-func (c *cacheRace) updater(_ *zero.Ctx) {
-	c.Err = errors.New("undefined updater")
+func (c *cacheRace) update(_ *zero.Ctx) {
+	c.Err = errors.New("undefined update")
 }
 func (c *cacheRace) beforeUpdate() {
-	c.RWMutex.Lock()
+	c.lock.Lock()
 }
-
 func (c *cacheRace) afterUpdate() {
-	c.RWMutex.Unlock()
+	c.lock.Unlock()
 }
-
 func (c *cacheRace) genMessageSegment(ctx *zero.Ctx) {
 	selfID := ctx.GetLoginInfo().Get("user_id").Int()
 
@@ -107,7 +105,7 @@ type CacheStuACMRace struct {
 	cacheRace
 }
 
-func (r *CacheStuACMRace) updater(ctx *zero.Ctx) {
+func (r *CacheStuACMRace) update(ctx *zero.Ctx) {
 	url := "https://contests.sdutacm.cn/contests.json"
 	res, err := http.Get(url)
 	if err != nil {
@@ -155,7 +153,7 @@ type CacheCodeforcesRace struct {
 	cacheRace
 }
 
-func (r *CacheCodeforcesRace) updater(ctx *zero.Ctx) {
+func (r *CacheCodeforcesRace) update(ctx *zero.Ctx) {
 	races, err := FetchCodeforcesContestList(false)
 	if err != nil {
 		r.Err = fmt.Errorf("failed to fetch codeforces race API: %v", err)
@@ -193,16 +191,16 @@ var (
 	}
 )
 
-func GetCodeforcesRaces() *CacheCodeforcesRace {
-	codeforcesRaces.RLock()
-	defer codeforcesRaces.RUnlock()
-	return codeforcesRaces
+func GetCodeforcesRaces() ([]message.MessageSegment, error) {
+	codeforcesRaces.lock.RLock()
+	defer codeforcesRaces.lock.RUnlock()
+	return codeforcesRaces.MessageSegments, codeforcesRaces.Err
 }
 
-func GetStuAcmRaces() *CacheStuACMRace {
-	codeforcesRaces.RLock()
-	defer codeforcesRaces.RUnlock()
-	return stuAcmRaces
+func GetStuAcmRaces() ([]message.MessageSegment, error) {
+	codeforcesRaces.lock.RLock()
+	defer codeforcesRaces.lock.RUnlock()
+	return stuAcmRaces.MessageSegments, codeforcesRaces.Err
 }
 
 func Updater(ctx *zero.Ctx) {
@@ -210,7 +208,7 @@ func Updater(ctx *zero.Ctx) {
 		logrus.Infof("正在更新比赛数据")
 		for _, v := range allRace {
 			v.beforeUpdate()
-			v.updater(ctx)
+			v.update(ctx)
 			v.afterUpdate()
 		}
 	}

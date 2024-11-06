@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app/model/db"
 	"github.com/YourSuzumiya/ACMBot/app/model/fetcher"
-	"github.com/YourSuzumiya/ACMBot/app/render"
+	"github.com/YourSuzumiya/ACMBot/app/model/render"
 	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
@@ -134,19 +134,19 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 }
 
 func allRaceHandler(ctx *zero.Ctx) {
-	race := fetcher.GetStuAcmRaces()
-	if race.Err != nil {
-		ctx.Send("检查到错误，数据可能并未及时更新，上次更新时间: " + race.LastUpdate.String() + "\nErr: " + race.Err.Error())
+	race, err := fetcher.GetStuAcmRaces()
+	if err != nil {
+		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
 	}
-	ctx.Send(race.MessageSegments)
+	ctx.Send(race)
 }
 
 func codeforcesRaceHandler(ctx *zero.Ctx) {
-	race := fetcher.GetCodeforcesRaces()
-	if race.Err != nil {
-		ctx.Send("检查到错误，数据可能并未及时更新，上次更新时间: " + race.LastUpdate.String() + "\nErr: " + race.Err.Error())
+	race, err := fetcher.GetCodeforcesRaces()
+	if err != nil {
+		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
 	}
-	ctx.Send(race.MessageSegments)
+	ctx.Send(race)
 }
 
 func menuHandler(ctx *zero.Ctx) {
