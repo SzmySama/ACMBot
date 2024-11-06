@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	QueryLimit    = 3
+	QueryLimit    = 1
 	CommandPrefix = "#"
 )
 

@@ -138,6 +138,7 @@ var (
 func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
 	cfLock.Lock()
 	defer cfLock.Unlock()
+	time.Sleep(2 * time.Second)
 	type codeforcesResponse[T any] struct {
 		/*
 			codeforces响应数据的基本格式
