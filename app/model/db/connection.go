@@ -48,7 +48,7 @@ func init() {
 			}
 
 			// Create DB
-			err = db.Exec("CREATE DATABASE IF NOT EXISTS ?", cfg.DatabaseName).Error
+			err = db.Exec(fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`", cfg.DatabaseName)).Error
 			if err != nil {
 				log.Fatalf("Failed to create DataBase: %v", err)
 			}
