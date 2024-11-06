@@ -14,10 +14,10 @@
 - [ ] NowCoder
 ### 近期比赛
 - [x] CodeForces | usage: `近期cf`
-- [ ] AtCoder | usage: `近期at`
-- [ ] NowCoder | usage: `近期nk`
+- [x] AtCoder | usage: `近期比赛`
+- [x] NowCoder | usage: `近期比赛`
+- [x] Luogu | usage: `近期比赛`
 ### 其他
-- [x] 今日比赛
 - [ ] 群内排行
 - [ ] ...
 
