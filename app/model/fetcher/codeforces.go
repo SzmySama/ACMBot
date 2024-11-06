@@ -139,7 +139,7 @@ var (
 func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
 	cfLock.Lock()
 	defer cfLock.Unlock()
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	type codeforcesResponse[T any] struct {
 		/*
 			codeforces响应数据的基本格式
@@ -238,6 +238,58 @@ func FetchCodeforcesContestList(gym bool) (*[]CodeforcesRace, error) {
 	})
 }
 
+func UpdateDBCodeforcesUser(handle string, ctx *zero.Ctx) error {
+	mu := &sync.Mutex{}
+	loadedMu, _ := updatingUser.LoadOrStore(handle, mu)
+	mu = loadedMu.(*sync.Mutex)
+	mu.Lock()
+	defer mu.Unlock()
+	newUser := false
+	var dbUser db.CodeforcesUser
+	if result := dbc.
+		Preload("Submissions", func(db *gorm.DB) *gorm.DB {
+			return db.Order("at DESC").Limit(1)
+		}).
+		Preload("RatingChanges").Where("handle = ?", handle).First(&dbUser); result.Error != nil {
+		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return result.Error
+		}
+		if err := CreateDBCodeforcesUser(handle); err != nil {
+			return fmt.Errorf("failed to update DB codeforces user: %v", err)
+		}
+		newUser = true
+	}
+
+	if time.Since(dbUser.UpdatedAt).Hours() <= 4 {
+		return nil
+	}
+
+	if newUser {
+		if err := dbc.Where("handle = ?", handle).First(&dbUser).Error; err != nil {
+			return fmt.Errorf("failed to update DB codeforces user: %v", err)
+		}
+	}
+
+	log.Info("updating DB codeforces user")
+	if ctx != nil {
+		ctx.Send("正在更新用户数据，请稍后...")
+	}
+	var err error
+	if !newUser {
+		if err = UpdateDBCodeforcesUserInfo(&dbUser); err != nil {
+			return fmt.Errorf("failed to update DB codeforces user: %v", err)
+		}
+	}
+	if err = UpdateDBCodeforcesSubmissions(&dbUser); err != nil {
+		return fmt.Errorf("failed to update DB codeforces submissions: %v", err)
+	}
+	if err = UpdateDBCodeforcesRatingChanges(&dbUser); err != nil {
+		return fmt.Errorf("failed to update DB codeforces rating changes: %v", err)
+	}
+
+	return dbc.Save(&dbUser).Error
+}
+
 // CreateDBCodeforcesUser 当且仅当已确认无此用户时使用
 func CreateDBCodeforcesUser(handle string) error {
 	fetchUsers, err := FetchCodeforcesUsersInfo([]string{handle}, false)
@@ -260,115 +312,22 @@ func CreateDBCodeforcesUser(handle string) error {
 	return dbc.Save(&dbUser).Error
 }
 
-func UpdateDBCodeforcesUserInfo(handle string) error {
-	fetchUsers, err := FetchCodeforcesUsersInfo([]string{handle}, false)
-	if err != nil {
-		return err
-	}
-	if len(*fetchUsers) != 1 {
-		return fmt.Errorf("got %d user(s) instead of 1", len(*fetchUsers))
-	}
-	fetchUser := (*fetchUsers)[0]
-	var dbUser db.CodeforcesUser
-	if result := dbc.Where("handle = ?", handle).First(&dbUser); result.Error != nil && !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-		return result.Error
-	}
-
-	dbUser.Handle = fetchUser.Handle
-	dbUser.Avatar = fetchUser.Avatar
-	dbUser.FriendCount = fetchUser.FriendCount
-	dbUser.Rating = fetchUser.Rating
-	dbUser.CreatedAt = fetchUser.CreatedAt
-
-	return dbc.Save(&dbUser).Error
-}
-
-func UpdateDBCodeforcesRatingChanges(handle string) error {
-	fetchRatingChanges, err := FetchCodeforcesUserRatingChanges(handle)
-	if err != nil {
-		return err
-	}
-
-	var dbUser db.CodeforcesUser
-	if result := dbc.Preload("RatingChanges", func(db *gorm.DB) *gorm.DB {
-		return db.Order("at DESC").Limit(1)
-	}).Where("handle = ?", handle).First(&dbUser); result.Error != nil {
-		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return result.Error
-		}
-
-		if err = CreateDBCodeforcesUser(handle); err != nil {
-			return fmt.Errorf("failed to update DB codeforces user: %v", err)
-		}
-
-		if err = dbc.Preload("RatingChanges").Where("handle = ?", handle).First(&dbUser).Error; err != nil {
-			return fmt.Errorf("failed to update DB codeforces user: %v", err)
-		}
-	}
-
-	var lastDBRatingChange db.CodeforcesRatingChange
-	if len(dbUser.RatingChanges) > 0 {
-		lastDBRatingChange = dbUser.RatingChanges[len(dbUser.RatingChanges)-1]
-	} else {
-		lastDBRatingChange = db.CodeforcesRatingChange{
-			At: time.Unix(0, 0),
-		}
-	}
-
-	// todo: 使用二分查找
-	firstNewRatingChangeIndex := -1
-	for k, v := range *fetchRatingChanges {
-		if v.At.After(lastDBRatingChange.At) {
-			firstNewRatingChangeIndex = k
-			break
-		}
-	}
-
-	if firstNewRatingChangeIndex == -1 {
-		return nil
-	}
-
-	for _, v := range (*fetchRatingChanges)[firstNewRatingChangeIndex:] {
-		dbUser.RatingChanges = append(dbUser.RatingChanges, db.CodeforcesRatingChange{
-			CodeforcesUserID: dbUser.ID,
-			At:               v.At,
-			NewRating:        v.NewRating,
-		})
-	}
-	return dbc.Save(&dbUser).Error
-}
-
-func UpdateDBCodeforcesSubmissions(handle string) error {
-	var dbUser db.CodeforcesUser
-	signalCount := SignalFetchCount
-	if result := dbc.Preload("Submissions", func(db *gorm.DB) *gorm.DB {
-		return db.Order("at DESC").Limit(1)
-	}).Where("handle = ?", handle).First(&dbUser); result.Error != nil {
-		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return result.Error
-		}
-		// NewUser
-		if err := CreateDBCodeforcesUser(handle); err != nil {
-			return fmt.Errorf("failed to update DB codeforces user: %v", err)
-		}
-		if result := dbc.Where("handle = ?", handle).First(&dbUser); result.Error != nil {
-			return result.Error
-		}
-	}
-
-	if len(dbUser.Submissions) == 0 {
-		signalCount = NewUserSignalFetchCount
+// UpdateDBCodeforcesSubmissions 需要preload最后一条submission !important
+func UpdateDBCodeforcesSubmissions(user *db.CodeforcesUser) error {
+	submissionNumPerFetch := SignalFetchCount
+	if len(user.Submissions) == 0 {
+		submissionNumPerFetch = NewUserSignalFetchCount
 	}
 
 	fetchCount := 1
 	var newSubmissions []codeforcesSubmission
 	lastSubmitTimeInDB := time.Unix(0, 0)
-	if len(dbUser.Submissions) > 0 {
-		lastSubmitTimeInDB = dbUser.Submissions[len(dbUser.Submissions)-1].CreatedAt
+	if len(user.Submissions) > 0 {
+		lastSubmitTimeInDB = user.Submissions[len(user.Submissions)-1].CreatedAt
 	}
 
 	for {
-		res, err := FetchCodeforcesUserSubmissions(handle, fetchCount, signalCount)
+		res, err := FetchCodeforcesUserSubmissions(user.Handle, fetchCount, submissionNumPerFetch)
 		if err != nil {
 			return err
 		}
@@ -377,7 +336,7 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 			break
 		}
 
-		fetchCount += signalCount
+		fetchCount += submissionNumPerFetch
 		lastSubmitTimeInRes := (*res)[len(*res)-1].At
 
 		if lastSubmitTimeInRes.After(lastSubmitTimeInDB) {
@@ -393,8 +352,6 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 		}
 		break
 	}
-
-	// 此处已拿到所有Submission，需要将每个Submission对应到具体的Problem
 
 	dbProblems := make(map[string]*db.CodeforcesProblem)
 	for _, v := range newSubmissions {
@@ -419,7 +376,7 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 			Model: gorm.Model{
 				ID: v.ID,
 			},
-			CodeforcesUserID:    dbUser.ID,
+			CodeforcesUserID:    user.ID,
 			CodeforcesProblemID: problemID,
 			At:                  v.At,
 			Status:              v.Status,
@@ -427,7 +384,6 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 	}
 
 	for _, v := range dbProblems {
-
 		if result := dbc.Save(v.Submissions); result.Error != nil {
 			return fmt.Errorf("failed to update DB codeforces submission: %v", result.Error)
 		}
@@ -436,51 +392,59 @@ func UpdateDBCodeforcesSubmissions(handle string) error {
 	return nil
 }
 
-func UpdateDBCodeforcesUser(handle string, ctx *zero.Ctx) error {
-	mu := &sync.Mutex{}
-	loadedMu, _ := updatingUser.LoadOrStore(handle, mu)
-	mu = loadedMu.(*sync.Mutex)
-	mu.Lock()
-	defer mu.Unlock()
-
-	var dbUser db.CodeforcesUser
-	if result := dbc.Where("handle = ?", handle).First(&dbUser); result.Error != nil {
-		if !errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return result.Error
-		}
-		if err := CreateDBCodeforcesUser(handle); err != nil {
-			return fmt.Errorf("failed to update DB codeforces user: %v", err)
-		}
-	}
-
-	if time.Since(dbUser.UpdatedAt).Hours() <= 4 {
-		return nil
-	}
-
-	ctx.Send("正在更新用户数据，请稍后...")
-
-	// todo:直接更新，而不是调用上述函数更新，避免多次查询用户数据
-
-	//var wg sync.WaitGroup
-	var err error
-
-	for _, i := range []func(handle string) error{
-		UpdateDBCodeforcesSubmissions,
-		UpdateDBCodeforcesRatingChanges,
-	} {
-		//wg.Add(1)
-		//go func() {
-		func() {
-			//defer wg.Done()
-			if e := i(handle); e != nil {
-				err = fmt.Errorf("failed to update DB codeforces user: %v", e)
-			}
-		}()
-	}
-	//wg.Wait()
+func UpdateDBCodeforcesRatingChanges(user *db.CodeforcesUser) error {
+	fetchRatingChanges, err := FetchCodeforcesUserRatingChanges(user.Handle)
 	if err != nil {
 		return err
 	}
+	var lastDBRatingChange db.CodeforcesRatingChange
+	if len(user.RatingChanges) > 0 {
+		lastDBRatingChange = user.RatingChanges[len(user.RatingChanges)-1]
+	} else {
+		lastDBRatingChange = db.CodeforcesRatingChange{
+			At: time.Unix(0, 0),
+		}
+	}
+
+	// todo: 使用二分查找
+	firstNewRatingChangeIndex := -1
+	for k, v := range *fetchRatingChanges {
+		if v.At.After(lastDBRatingChange.At) {
+			firstNewRatingChangeIndex = k
+			break
+		}
+	}
+
+	if firstNewRatingChangeIndex == -1 {
+		return nil
+	}
+
+	for _, v := range (*fetchRatingChanges)[firstNewRatingChangeIndex:] {
+		user.RatingChanges = append(user.RatingChanges, db.CodeforcesRatingChange{
+			CodeforcesUserID: user.ID,
+			At:               v.At,
+			NewRating:        v.NewRating,
+		})
+	}
+
+	return nil
+}
+
+func UpdateDBCodeforcesUserInfo(user *db.CodeforcesUser) error {
+	fetchUsers, err := FetchCodeforcesUsersInfo([]string{user.Handle}, false)
+	if err != nil {
+		return err
+	}
+	if len(*fetchUsers) != 1 {
+		return fmt.Errorf("got %d user(s) instead of 1", len(*fetchUsers))
+	}
+	fetchUser := (*fetchUsers)[0]
+
+	user.Handle = fetchUser.Handle
+	user.Avatar = fetchUser.Avatar
+	user.FriendCount = fetchUser.FriendCount
+	user.Rating = fetchUser.Rating
+	user.CreatedAt = fetchUser.CreatedAt
 
 	return nil
 }

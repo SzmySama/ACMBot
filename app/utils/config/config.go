@@ -26,18 +26,16 @@ var (
 			Password:     "",
 		},
 		WS: WebsocketConfigStruct{
-			Host:        "localhost",
-			Port:        3001,
-			ChannelSize: 1000,
+			Host: "localhost",
+			Port: 3001,
 		},
 	}
 )
 
 type WebsocketConfigStruct struct {
-	Host        string `toml:"host"`
-	Port        int32  `toml:"port"`
-	Token       string `toml:"token"`
-	ChannelSize int32  `toml:"channel_size"`
+	Host  string `toml:"host"`
+	Port  int32  `toml:"port"`
+	Token string `toml:"token"`
 }
 type DataBaseConfigStruct struct {
 	Host         string `toml:"host"`
