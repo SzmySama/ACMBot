@@ -198,9 +198,9 @@ func GetCodeforcesRaces() ([]message.MessageSegment, error) {
 }
 
 func GetStuAcmRaces() ([]message.MessageSegment, error) {
-	codeforcesRaces.lock.RLock()
-	defer codeforcesRaces.lock.RUnlock()
-	return stuAcmRaces.MessageSegments, codeforcesRaces.Err
+	stuAcmRaces.lock.RLock()
+	defer stuAcmRaces.lock.RUnlock()
+	return stuAcmRaces.MessageSegments, stuAcmRaces.Err
 }
 
 func Updater(ctx *zero.Ctx) {
