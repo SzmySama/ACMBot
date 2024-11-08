@@ -2,6 +2,8 @@ package bot
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/YourSuzumiya/ACMBot/app/model/db"
 	"github.com/YourSuzumiya/ACMBot/app/model/fetcher"
 	"github.com/YourSuzumiya/ACMBot/app/model/render"
@@ -10,7 +12,6 @@ import (
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
 	"github.com/wdvxdr1123/ZeroBot/message"
-	"strings"
 )
 
 const (
@@ -19,20 +20,24 @@ const (
 )
 
 var (
-	cfg     = config.GetConfig().WS
+	BotCfg  = config.GetConfig().Bot
 	zeroCfg = zero.Config{
-		NickName:      []string{"bot"},
-		CommandPrefix: CommandPrefix,
-		SuperUsers:    []int64{1549992006},
-		Driver: []zero.Driver{
-			driver.NewWebSocketClient(
-				fmt.Sprintf("ws://%s:%d", cfg.Host, cfg.Port),
-				cfg.Token),
-		},
+		NickName:      BotCfg.NickName,
+		CommandPrefix: BotCfg.CommandPrefix,
+		SuperUsers:    BotCfg.SuperUsers,
+		Driver:        []zero.Driver{},
 	}
 )
 
 func init() {
+	for _, WScfg := range BotCfg.WS {
+		zeroCfg.Driver = append(zeroCfg.Driver, driver.NewWebSocketClient(
+			fmt.Sprintf("ws://%s:%d", WScfg.Host, WScfg.Port),
+			WScfg.Token))
+	}
+}
+
+func Start() {
 	zero.OnCommand("近期比赛").Handle(allRaceHandler)
 
 	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
@@ -43,9 +48,7 @@ func init() {
 
 	zero.OnCommand("菜单").Handle(menuHandler)
 	zero.OnCommand("help").Handle(menuHandler)
-}
 
-func Start() {
 	zero.RunAndBlock(&zeroCfg, func() {
 		zero.RangeBot(func(_ int64, ctx *zero.Ctx) bool {
 			go fetcher.Updater(ctx)

@@ -9,13 +9,15 @@ import (
 
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 var (
 	config = ConfigStruct{}
 	once   sync.Once
 
-	configPath    = "conf.toml"
+	configPath    = "./conf.toml"
+	configName    = "conf"
 	defaultConfig = ConfigStruct{
 		DataBase: DataBaseConfigStruct{
 			Username:     "root",
@@ -25,37 +27,52 @@ var (
 			DriverName:   "MariaDB",
 			Password:     "",
 		},
-		WS: WebsocketConfigStruct{
-			Host: "localhost",
-			Port: 3001,
+		Bot: BotConfigStruct{
+			NickName:      []string{"bot1", "bot2"},
+			CommandPrefix: "#",
+			SuperUsers:    []int64{123456789, 987654321},
+			WS: []WebsocketConfigStruct{
+				{Host: "localhost",
+					Port: 3001},
+			},
 		},
 	}
 )
 
 type WebsocketConfigStruct struct {
-	Host  string `toml:"host"`
-	Port  int32  `toml:"port"`
-	Token string `toml:"token"`
+	IsForward   bool   `mapstructure:"is_forward" toml:"is_forward"`
+	Host        string `mapstructure:"host" toml:"host"`
+	Port        int32  `mapstructure:"port" toml:"port"`
+	Token       string `mapstructure:"token" toml:"token"`
+	ChannelSize int    `mapstructure:"channle_size" toml:"channel_size"`
 }
-type DataBaseConfigStruct struct {
-	Host         string `toml:"host"`
-	Port         int    `toml:"port"`
-	Username     string `toml:"username"`
-	Password     string `toml:"password"`
-	DatabaseName string `toml:"database_name"`
-	DriverName   string `toml:"driver_name"`
-	AutoCreateDB bool   `toml:"auto_create_db"`
+
+type BotConfigStruct struct {
+	NickName      []string                `mapstructure:"nick_name" toml:"nick_name"`
+	CommandPrefix string                  `mapstructure:"command_prefix" toml:"command_prefix"`
+	SuperUsers    []int64                 `mapstructure:"super_users" toml:"super_users"`
+	WS            []WebsocketConfigStruct `mapstructure:"websocket" toml:"websocket"`
 }
 
 type CodeforcesConfigStruct struct {
-	Key    string `toml:"key"`
-	Secret string `toml:"secret"`
+	Key    string `mapstructure:"key" toml:"key"`
+	Secret string `mapstructure:"secret" toml:"secret"`
+}
+
+type DataBaseConfigStruct struct {
+	Host         string `mapstructure:"host" toml:"host"`
+	Port         int    `mapstructure:"port" toml:"port"`
+	Username     string `mapstructure:"username" toml:"username"`
+	Password     string `mapstructure:"password" toml:"password"`
+	DatabaseName string `mapstructure:"database_name" toml:"database_name"`
+	DriverName   string `mapstructure:"driver_name" toml:"driver_name"`
+	AutoCreateDB bool   `mapstructure:"auto_create_db" toml:"auto_create_db"`
 }
 
 type ConfigStruct struct {
-	Codeforces CodeforcesConfigStruct `toml:"Codeforces"`
-	DataBase   DataBaseConfigStruct   `toml:"DataBase"`
-	WS         WebsocketConfigStruct  `toml:"Websocket"`
+	Codeforces CodeforcesConfigStruct `mapstructure:"codeforces" toml:"codeforces"`
+	DataBase   DataBaseConfigStruct   `mapstructure:"database" toml:"database"`
+	Bot        BotConfigStruct        `mapstructure:"bot" toml:"bot"`
 }
 
 func writeConfig(config *ConfigStruct) error {
@@ -111,7 +128,7 @@ func overwriteConfigRecursive(defaultVal, actualVal reflect.Value) error {
 	return nil
 }
 
-func GetConfig() *ConfigStruct {
+func GetConfig_() *ConfigStruct {
 	once.Do(func() {
 		configFile, err := os.Open(configPath)
 		if os.IsNotExist(err) {
@@ -175,5 +192,41 @@ func GetConfig() *ConfigStruct {
 		}
 	})
 
+	return &config
+}
+
+func configInit() {
+	viper.SetConfigType("toml")
+	viper.SetConfigFile(configPath)
+	viper.SetConfigName(configName)
+	viper.AddConfigPath(".")
+	viper.SetDefault("DataBase", defaultConfig.DataBase)
+	viper.SetDefault("Bot", defaultConfig.Bot)
+	viper.SetDefault("Codeforces", defaultConfig.Codeforces)
+}
+
+func configWrite() error {
+	return viper.SafeWriteConfigAs(configPath)
+}
+
+func GetConfig() *ConfigStruct {
+	once.Do(func() {
+		configInit()
+		if err := viper.ReadInConfig(); err != nil {
+			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+				log.Warnf("Config file not found, creating")
+				if err := configWrite(); err != nil {
+					log.Panicf("Config create failed: %v", err)
+				}
+				log.Warnf("Default config %s created. Please complete it and restart me", configPath)
+				os.Exit(0)
+			} else {
+				log.Panicf("Reading config failed, when config file exist: %v", err)
+			}
+		}
+		if err := viper.Unmarshal(&config); err != nil {
+			log.Panicf("Unable to decode config into struct: %v", err)
+		}
+	})
 	return &config
 }
