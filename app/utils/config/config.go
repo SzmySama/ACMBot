@@ -39,6 +39,12 @@ var (
 				},
 			},
 		},
+		Redis: RedisConfigStruct{
+			Host:     "127.0.0.1",
+			Port:     6379,
+			Password: "",
+			DB:       0,
+		},
 	}
 )
 
@@ -72,10 +78,18 @@ type DataBaseConfigStruct struct {
 	AutoCreateDB bool   `mapstructure:"auto_create_db" toml:"auto_create_db"`
 }
 
+type RedisConfigStruct struct {
+	Host     string `mapstructure:"host" toml:"host"`
+	Port     int    `mapstructure:"port" toml:"port"`
+	Password string `mapstructure:"password" toml:"password"`
+	DB       int    `mapstructure:"db" toml:"db"`
+}
+
 type AllConfigStruct struct {
+	Bot        BotConfigStruct        `mapstructure:"bot" toml:"bot"`
 	Codeforces CodeforcesConfigStruct `mapstructure:"codeforces" toml:"codeforces"`
 	DataBase   DataBaseConfigStruct   `mapstructure:"database" toml:"database"`
-	Bot        BotConfigStruct        `mapstructure:"bot" toml:"bot"`
+	Redis      RedisConfigStruct      `mapstructure:"redis" toml:"redis"`
 }
 
 func configInit() {
@@ -87,6 +101,7 @@ func configInit() {
 	viper.SetDefault("DataBase", defaultConfig.DataBase)
 	viper.SetDefault("Bot", defaultConfig.Bot)
 	viper.SetDefault("Codeforces", defaultConfig.Codeforces)
+	viper.SetDefault("Redis", defaultConfig.Redis)
 }
 
 func GetConfig() *AllConfigStruct {

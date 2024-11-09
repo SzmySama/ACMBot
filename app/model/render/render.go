@@ -1,9 +1,6 @@
 package render
 
 import (
-	"bytes"
-	"fmt"
-	"github.com/YourSuzumiya/ACMBot/app/model/db"
 	"html/template"
 	"os"
 	"path"
@@ -14,10 +11,21 @@ import (
 )
 
 var (
+	_playwright *playwright.Playwright
+	_bowers     playwright.Browser
+
 	fullTemplatePath               string
 	codeforcesUserProfileTemplate  *template.Template
 	codeforcesRatingChangeTemplate *template.Template
 )
+
+type Error struct {
+	msg string
+}
+
+func (e Error) Error() string {
+	return "完蛋了，渲染器出错了😰: " + e.msg
+}
 
 const (
 	templatePath                        = "app/templates/"
@@ -25,7 +33,39 @@ const (
 	CodeforcesRatingChangesTemplatePath = templatePath + "codeforces_rating_change.html"
 )
 
+type HtmlOptions struct {
+	Path string
+	HTML string
+}
+
 func init() {
+	initDriver()
+	initTemplates()
+}
+
+func initDriver() {
+	var err error
+	err = playwright.Install(&playwright.RunOptions{
+		Browsers: []string{"chromium"},
+	})
+	if err != nil {
+		log.Fatalf("Failed to install playwright: %v", err)
+	}
+	_playwright, err = playwright.Run()
+	if err != nil {
+		log.Fatalf("Failed to start playwright: %v", err)
+	}
+
+	_bowers, err = _playwright.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
+		// Headless: &[]bool{false}[0],
+	})
+	if err != nil {
+		log.Fatalf("Failed to launch chromium: %v", err)
+	}
+	log.Info(_bowers)
+}
+
+func initTemplates() {
 	execPath, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Failed to get exec info: %v", err)
@@ -46,80 +86,38 @@ func init() {
 	}
 }
 
+func ShutdownBowers() error {
+	return _playwright.Stop()
+}
+
+func GetNewPage(opt playwright.BrowserNewPageOptions) (playwright.Page, error) {
+	return _bowers.NewPage(opt)
+}
+
 func Html(PageOpt *playwright.BrowserNewPageOptions, HTMLOpt *HtmlOptions) ([]byte, error) {
 	page, err := GetNewPage(*PageOpt)
 	if err != nil {
-		return nil, err
+		return nil, Error{msg: err.Error()}
 	}
-	defer func(page playwright.Page, options ...playwright.PageCloseOptions) {
-		err := page.Close(options...)
-		if err != nil {
-			log.Errorf("Failed to close page: %v", err)
-		}
-	}(page)
+	defer page.Close()
+
 	if strings.HasPrefix(HTMLOpt.Path, "file://") {
-		_, err := page.Goto(HTMLOpt.Path)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		_, err := page.Goto("file://" + HTMLOpt.Path)
-		if err != nil {
-			return nil, err
-		}
+		HTMLOpt.Path = "file://" + HTMLOpt.Path
 	}
-	err = page.SetContent(HTMLOpt.HTML, playwright.PageSetContentOptions{
+	if _, err = page.Goto("file://" + HTMLOpt.Path); err != nil {
+		return nil, Error{msg: err.Error()}
+	}
+	if err = page.SetContent(HTMLOpt.HTML, playwright.PageSetContentOptions{
 		WaitUntil: playwright.WaitUntilStateNetworkidle,
-	})
-	if err != nil {
-		return nil, err
+	}); err != nil {
+		return nil, Error{msg: err.Error()}
 	}
-	return page.Screenshot(playwright.PageScreenshotOptions{
+	data, err := page.Screenshot(playwright.PageScreenshotOptions{
 		// FullPage: &[]bool{true}[0],
 		Type: playwright.ScreenshotTypePng,
 	})
-}
-
-// todo: 统一render参数
-
-func CodeforcesUserProfile(user db.CodeforcesUser) ([]byte, error) {
-	var buffer bytes.Buffer
-	if err := codeforcesUserProfileTemplate.Execute(&buffer, DB2RenderUser(user)); err != nil {
-		return nil, fmt.Errorf("failed to execute template: %v", err)
+	if err != nil {
+		return nil, Error{msg: err.Error()}
 	}
-	return Html(
-		&playwright.BrowserNewPageOptions{
-			DeviceScaleFactor: &[]float64{2.0}[0],
-			Viewport: &playwright.Size{
-				Width:  400,
-				Height: 225,
-			},
-		}, &HtmlOptions{
-			Path: fullTemplatePath,
-			HTML: buffer.String(),
-		},
-	)
-}
-
-func CodeforcesRatingChanges(ratingChanges []db.CodeforcesRatingChange, handle string) ([]byte, error) {
-	var buffer bytes.Buffer
-	if err := codeforcesRatingChangeTemplate.Execute(&buffer, CodeforcesRatingChangesData{
-		RatingChangesMetaData: DB2RenderCodeforcesRatingChanges(ratingChanges),
-		Handle:                handle,
-	}); err != nil {
-		return nil, fmt.Errorf("failed to execute template: %v", err)
-	}
-
-	return Html(
-		&playwright.BrowserNewPageOptions{
-			DeviceScaleFactor: &[]float64{2.0}[0],
-			Viewport: &playwright.Size{
-				Width:  1000,
-				Height: 500,
-			},
-		}, &HtmlOptions{
-			Path: fullTemplatePath,
-			HTML: buffer.String(),
-		},
-	)
+	return data, nil
 }

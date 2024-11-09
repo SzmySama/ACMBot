@@ -2,38 +2,36 @@ package bot
 
 import (
 	"fmt"
+	"github.com/YourSuzumiya/ACMBot/app/model/manager"
 	"strings"
 
-	"github.com/YourSuzumiya/ACMBot/app/model/db"
-	"github.com/YourSuzumiya/ACMBot/app/model/fetcher"
-	"github.com/YourSuzumiya/ACMBot/app/model/render"
 	"github.com/YourSuzumiya/ACMBot/app/utils/config"
-	"github.com/sirupsen/logrus"
+
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
 	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
 const (
-	QueryLimit    = 1
+	QueryLimit    = 3
 	CommandPrefix = "#"
 )
 
 var (
-	BotCfg  = config.GetConfig().Bot
+	Cfg     = config.GetConfig().Bot
 	zeroCfg = zero.Config{
-		NickName:      BotCfg.NickName,
-		CommandPrefix: BotCfg.CommandPrefix,
-		SuperUsers:    BotCfg.SuperUsers,
+		NickName:      Cfg.NickName,
+		CommandPrefix: Cfg.CommandPrefix,
+		SuperUsers:    Cfg.SuperUsers,
 		Driver:        []zero.Driver{},
 	}
 )
 
 func init() {
-	for _, WScfg := range BotCfg.WS {
+	for _, cfg := range Cfg.WS {
 		zeroCfg.Driver = append(zeroCfg.Driver, driver.NewWebSocketClient(
-			fmt.Sprintf("ws://%s:%d", WScfg.Host, WScfg.Port),
-			WScfg.Token))
+			fmt.Sprintf("ws://%s:%d", cfg.Host, cfg.Port),
+			cfg.Token))
 	}
 }
 
@@ -49,37 +47,31 @@ func Start() {
 	zero.OnCommand("菜单").Handle(menuHandler)
 	zero.OnCommand("help").Handle(menuHandler)
 
-	zero.RunAndBlock(&zeroCfg, func() {
-		zero.RangeBot(func(_ int64, ctx *zero.Ctx) bool {
-			go fetcher.Updater(ctx)
-			return false
-		})
-	})
+	go manager.RaceUpdater()
+
+	zero.RunAndBlock(&zeroCfg, nil)
 }
 
 func processCodeforcesUserProfile(handle string, ctx *zero.Ctx) {
-	if err := fetcher.UpdateDBCodeforcesUser(handle, ctx); err != nil {
-		ctx.Send("获取数据的时候出错惹🥹: " + err.Error())
-		return
-	}
-
-	var user db.CodeforcesUser
-
-	if err := db.GetDBConnection().Where("handle = ?", handle).First(&user).Error; err != nil {
-		ctx.Send(fmt.Sprintf("DB Err😭: %v", err))
-		return
-	}
-
-	data, err := render.CodeforcesUserProfile(user)
+	user, err := manager.GetUpdatedCodeforcesUser(handle)
 	if err != nil {
-		ctx.Send("正在生成" + user.Handle + "的卡片，但是出错惹🥵: " + err.Error())
+		ctx.Send(err.Error())
 		return
 	}
-	ctx.Send([]message.MessageSegment{message.ImageBytes(data)})
+	image, err := user.ToRenderUser().ToImage()
+	if err != nil {
+		ctx.Send(err.Error())
+	}
+	ctx.Send([]message.MessageSegment{message.ImageBytes(image)})
 }
 
 func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
+	if len(handles) == 0 {
+		ctx.Send("没听到你要查谁呢，再说一遍吧？")
+		return
+	}
+
 	count := 1
 	for _, i := range handles {
 		if i == "" {
@@ -95,33 +87,26 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 }
 
 func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
-	err := fetcher.UpdateDBCodeforcesUser(handle, ctx)
+	user, err := manager.GetUpdatedCodeforcesUser(handle)
 	if err != nil {
-		ctx.Send("更新用户`" + handle + "`的数据失败惹🥹：" + err.Error())
+		ctx.Send(err.Error())
 		return
 	}
-
-	var user db.CodeforcesUser
-	if err := db.GetDBConnection().Preload("RatingChanges").Where("handle = ?", handle).First(&user).Error; err != nil {
-		ctx.Send("DB Err😰: " + err.Error())
-	}
-
-	if len(user.RatingChanges) == 0 {
-		ctx.Send("没有找到用户`" + handle + "`的rating记录，赛时加入比赛才计入rating哦")
-		return
-	}
-
-	imgData, err := render.CodeforcesRatingChanges(user.RatingChanges, handle)
+	image, err := user.ToRenderRatingChanges().ToImage()
 	if err != nil {
-		ctx.Send(fmt.Sprintf("render err😰: %v", err))
-		logrus.Warnf("render err😰: %v", err)
+		ctx.Send(err.Error())
 		return
 	}
-	ctx.Send([]message.MessageSegment{message.ImageBytes(imgData)})
+	ctx.Send([]message.MessageSegment{message.ImageBytes(image)})
 }
 
 func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 	handles := strings.Split(ctx.MessageString(), " ")[1:]
+	if len(handles) == 0 {
+		ctx.Send("没听到你要查谁呢，再说一遍吧？")
+		return
+	}
+
 	count := 1
 	for _, i := range handles {
 		if i == "" {
@@ -137,7 +122,7 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 }
 
 func allRaceHandler(ctx *zero.Ctx) {
-	race, err := fetcher.GetStuAcmRaces()
+	race, err := manager.GetStuACMRaces()
 	if err != nil {
 		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
 	}
@@ -145,7 +130,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 }
 
 func codeforcesRaceHandler(ctx *zero.Ctx) {
-	race, err := fetcher.GetCodeforcesRaces()
+	race, err := manager.GetCodeforcesRaces()
 	if err != nil {
 		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
 	}

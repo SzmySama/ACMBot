@@ -2,17 +2,13 @@ package fetcher
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"slices"
-	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	zero "github.com/wdvxdr1123/ZeroBot"
-	"github.com/wdvxdr1123/ZeroBot/message"
 )
 
 var (
@@ -60,76 +56,30 @@ func (r *Race) String() string {
 	)
 }
 
-type updatable interface {
-	update(ctx *zero.Ctx)
-	beforeUpdate()
-	afterUpdate()
-}
-
-type cacheRace struct {
-	data            []Race
-	MessageSegments []message.MessageSegment
-	Err             error
-	LastUpdate      time.Time
-	lock            sync.RWMutex
-}
-
-func (c *cacheRace) update(_ *zero.Ctx) {
-	c.Err = errors.New("undefined update")
-}
-func (c *cacheRace) beforeUpdate() {
-	c.lock.Lock()
-}
-func (c *cacheRace) afterUpdate() {
-	c.lock.Unlock()
-}
-func (c *cacheRace) genMessageSegment(ctx *zero.Ctx) {
-	selfID := ctx.GetLoginInfo().Get("user_id").Int()
-
-	var newMessageSegment []message.MessageSegment
-
-	for _, v := range c.data {
-		MessageID := ctx.SendPrivateMessage(selfID, v.String())
-		if MessageID == 0 {
-			c.Err = errors.New("failed to gen message")
-			return
-		}
-		newMessageSegment = append(newMessageSegment, message.Node(MessageID))
-	}
-
-	c.MessageSegments = newMessageSegment
-	c.LastUpdate = time.Now()
-}
-
-type CacheStuACMRace struct {
-	cacheRace
-}
-
-func (r *CacheStuACMRace) update(ctx *zero.Ctx) {
+func FetchStuACMRaces() ([]Race, error) {
 	url := "https://contests.sdutacm.cn/contests.json"
 	res, err := http.Get(url)
 	if err != nil {
-		r.Err = fmt.Errorf("failed to fetch all race API: %v", err)
-		return
+		return nil, fmt.Errorf("failed to fetch all race API: %v", err)
+
 	}
+
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
+		if err := Body.Close(); err != nil {
 			logrus.Errorf("failed to close response body: %v", err)
 		}
 	}(res.Body)
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		r.Err = fmt.Errorf("failed to read res body: %v", err)
-		return
+		return nil, fmt.Errorf("failed to read res body: %v", err)
+
 	}
 
 	var races []Race
 
 	if err = json.Unmarshal(body, &races); err != nil {
-		r.Err = fmt.Errorf("failed to unmarshal res data: %v", err)
-		return
+		return nil, fmt.Errorf("failed to unmarshal res data: %v", err)
 	}
 
 	// filterRace
@@ -144,23 +94,15 @@ func (r *CacheStuACMRace) update(ctx *zero.Ctx) {
 			}
 		}
 	}
-	r.data = targetRace
-
-	r.genMessageSegment(ctx)
+	return targetRace, nil
 }
 
-type CacheCodeforcesRace struct {
-	cacheRace
-}
-
-func (r *CacheCodeforcesRace) update(ctx *zero.Ctx) {
+func FetchCodeforcesRaces() ([]Race, error) {
 	races, err := FetchCodeforcesContestList(false)
 	if err != nil {
-		r.Err = fmt.Errorf("failed to fetch codeforces race API: %v", err)
-		return
+		return nil, err
 	}
 	result := make([]Race, 0, len(*races))
-
 	for _, race := range *races {
 		if race.RelativeTimeSeconds > 0 {
 			break
@@ -174,48 +116,6 @@ func (r *CacheCodeforcesRace) update(ctx *zero.Ctx) {
 			EndTime:   time.Unix(race.StartTimeSeconds+race.DurationSeconds, 0),
 		})
 	}
-
 	slices.Reverse(result)
-
-	r.data = result
-
-	r.genMessageSegment(ctx)
-}
-
-var (
-	codeforcesRaces = &CacheCodeforcesRace{}
-	stuAcmRaces     = &CacheStuACMRace{}
-	allRace         = []updatable{
-		codeforcesRaces,
-		stuAcmRaces,
-	}
-)
-
-func GetCodeforcesRaces() ([]message.MessageSegment, error) {
-	codeforcesRaces.lock.RLock()
-	defer codeforcesRaces.lock.RUnlock()
-	return codeforcesRaces.MessageSegments, codeforcesRaces.Err
-}
-
-func GetStuAcmRaces() ([]message.MessageSegment, error) {
-	stuAcmRaces.lock.RLock()
-	defer stuAcmRaces.lock.RUnlock()
-	return stuAcmRaces.MessageSegments, stuAcmRaces.Err
-}
-
-func Updater(ctx *zero.Ctx) {
-	update := func() {
-		logrus.Infof("正在更新比赛数据")
-		for _, v := range allRace {
-			v.beforeUpdate()
-			v.update(ctx)
-			v.afterUpdate()
-		}
-	}
-
-	update()
-	ticker := time.NewTicker(6 * time.Hour)
-	for range ticker.C {
-		update()
-	}
+	return result, nil
 }

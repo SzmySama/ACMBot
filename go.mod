@@ -3,9 +3,9 @@ module github.com/YourSuzumiya/ACMBot
 go 1.23.0
 
 require (
-	github.com/BurntSushi/toml v1.4.0
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/playwright-community/playwright-go v0.4501.1
+	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/viper v1.19.0
 	github.com/wdvxdr1123/ZeroBot v1.7.4
@@ -16,7 +16,9 @@ require (
 require (
 	github.com/FloatTech/ttl v0.0.0-20220715042055-15612be72f5b // indirect
 	github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 // indirect
+	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect

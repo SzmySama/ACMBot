@@ -21,6 +21,11 @@ func GetDBConnection() *gorm.DB {
 
 func init() {
 	cfg := config.GetConfig().DataBase
+
+	if cfg.DatabaseName == "" {
+		log.Fatalf("database name is empty")
+	}
+
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local", cfg.Username, cfg.Password, cfg.Host, cfg.Port, cfg.DatabaseName)
 	var err error
 	if db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{}); err != nil {
