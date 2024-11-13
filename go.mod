@@ -3,6 +3,7 @@ module github.com/YourSuzumiya/ACMBot
 go 1.23.0
 
 require (
+	github.com/RomiChan/syncx v0.0.0-20221202055724-5f842c53020e
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/playwright-community/playwright-go v0.4501.1
 	github.com/redis/go-redis/v9 v9.7.0
