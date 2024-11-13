@@ -4,10 +4,6 @@ import (
 	"github.com/YourSuzumiya/ACMBot/src/internal/img"
 )
 
-func init() {
-	registry.Store("codeforces", &codeForcesRemote{})
-}
-
 type codeForcesStatusUser struct {
 }
 
@@ -31,6 +27,8 @@ func (cfs *codeForcesStatusRace) Render(*img.Option) ([]byte, error) {
 }
 
 type codeForcesRemote struct {
+	Key    string `mapstructure:"key" toml:"key"`
+	Secret string `mapstructure:"secret" toml:"secret"`
 }
 
 func (cfr *codeForcesRemote) String() string {
