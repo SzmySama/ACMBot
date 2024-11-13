@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/RomiChan/syncx"
-	"github.com/YourSuzumiya/ACMBot/src/internal/api"
 	"github.com/YourSuzumiya/ACMBot/src/internal/img"
 )
 
@@ -13,14 +12,10 @@ type Status interface {
 	Render(*img.Option) ([]byte, error)
 }
 
-type User interface {
-	fmt.Stringer
-	StatusOf(api.StatusType) (Status, error)
-}
-
 type Remote interface {
 	fmt.Stringer
-	NewUser(api.UserID) (User, error)
+	Race() (Status, error)
+	Users(ids ...string) ([]Status, error)
 }
 
 var registry = syncx.Map[string, Remote]{}
