@@ -1,43 +1,46 @@
 package src
 
 import (
-	"github.com/YourSuzumiya/ACMBot/src/internal/api"
 	"github.com/YourSuzumiya/ACMBot/src/internal/img"
 )
 
 func init() {
-	registry.Store("codeforces", &CodeForcesRemote{})
+	registry.Store("codeforces", &codeForcesRemote{})
 }
 
-type CodeForcesStatus struct {
+type codeForcesStatusUser struct {
 }
 
-func (cfs *CodeForcesStatus) String() string {
+func (cfs *codeForcesStatusUser) String() string {
 	panic("TODO")
 }
 
-func (cfs *CodeForcesStatus) Render(*img.Option) ([]byte, error) {
+func (cfs *codeForcesStatusUser) Render(*img.Option) ([]byte, error) {
 	panic("TODO")
 }
 
-type CodeForcesUser struct {
+type codeForcesStatusRace struct {
 }
 
-func (cfu *CodeForcesUser) String() string {
+func (cfs *codeForcesStatusRace) String() string {
 	panic("TODO")
 }
 
-func (cfu *CodeForcesUser) StatusOf(api.StatusType) (Status, error) {
+func (cfs *codeForcesStatusRace) Render(*img.Option) ([]byte, error) {
 	panic("TODO")
 }
 
-type CodeForcesRemote struct {
+type codeForcesRemote struct {
 }
 
-func (cfr *CodeForcesRemote) String() string {
+func (cfr *codeForcesRemote) String() string {
 	panic("TODO")
 }
 
-func (cfr *CodeForcesRemote) NewUser(api.UserID) (User, error) {
-	panic("TODO")
+func (cfr *codeForcesRemote) Race() (Status, error) {
+	return &codeForcesStatusRace{}, nil
+}
+
+func (cfr *codeForcesRemote) Users(...string) ([]Status, error) {
+	return []Status{&codeForcesStatusUser{}, &codeForcesStatusUser{}}, nil
 }
