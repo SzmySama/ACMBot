@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	"github.com/redis/go-redis/v9"
@@ -27,4 +28,8 @@ func init() {
 
 func GetRedisClient() *redis.Client {
 	return rdb
+}
+
+func IsNil(err error) bool {
+	return errors.Is(err, redis.Nil)
 }

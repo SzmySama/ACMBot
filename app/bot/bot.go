@@ -42,7 +42,7 @@ func Start() {
 	zero.OnCommand("rating").Handle(codeforcesRatingChangeHandler)
 	zero.OnCommand("rt").Handle(codeforcesRatingChangeHandler)
 
-	zero.OnCommand("cf").Handle(codeforcesUserProfileHandler)
+	zero.OnCommand("cf").Handle(codeforcesUserProfileV2Handler)
 
 	zero.OnCommand("菜单").Handle(menuHandler)
 	zero.OnCommand("help").Handle(menuHandler)
@@ -58,7 +58,7 @@ func processCodeforcesUserProfile(handle string, ctx *zero.Ctx) {
 		ctx.Send(err.Error())
 		return
 	}
-	image, err := user.ToRenderUser().ToImage()
+	image, err := user.ToRenderProfileV1().ToImage()
 	if err != nil {
 		ctx.Send(err.Error())
 	}
@@ -83,6 +83,40 @@ func codeforcesUserProfileHandler(ctx *zero.Ctx) {
 		}
 		count++
 		go processCodeforcesUserProfile(i, ctx)
+	}
+}
+
+func processCodeforcesUserProfileV2(handle string, ctx *zero.Ctx) {
+	user, err := manager.GetUpdatedCodeforcesUser(handle)
+	if err != nil {
+		ctx.Send(err.Error())
+		return
+	}
+	image, err := user.ToRenderProfileV2().ToImage()
+	if err != nil {
+		ctx.Send(err.Error())
+	}
+	ctx.Send([]message.MessageSegment{message.ImageBytes(image)})
+}
+
+func codeforcesUserProfileV2Handler(ctx *zero.Ctx) {
+	handles := strings.Split(ctx.MessageString(), " ")[1:]
+	if len(handles) == 0 {
+		ctx.Send("没听到你要查谁呢，再说一遍吧？")
+		return
+	}
+
+	count := 1
+	for _, i := range handles {
+		if i == "" {
+			continue
+		}
+		if count > QueryLimit {
+			ctx.Send("参数太多了🥰，后面的就不查了哦")
+			return
+		}
+		count++
+		go processCodeforcesUserProfileV2(i, ctx)
 	}
 }
 

@@ -19,10 +19,6 @@ const (
 	FuncColor = "\033[35m" // Magenta
 )
 
-func Init() {
-
-}
-
 func init() {
 	logrus.SetFormatter(&LogFormatter{})
 }

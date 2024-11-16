@@ -1,16 +1,16 @@
 package manager
 
 import (
+	"sort"
+	"sync"
+	"time"
+
 	"encoding/json"
-	"errors"
+
 	"github.com/YourSuzumiya/ACMBot/app/model/cache"
 	"github.com/YourSuzumiya/ACMBot/app/model/db"
 	"github.com/YourSuzumiya/ACMBot/app/model/fetcher"
 	"github.com/YourSuzumiya/ACMBot/app/model/render"
-	"github.com/redis/go-redis/v9"
-	"gorm.io/gorm"
-	"sync"
-	"time"
 )
 
 var (
@@ -18,22 +18,35 @@ var (
 )
 
 /*
+ 0 -> 0~800
+ 800 -> 800~1200
+ 1200 -> 1200~1600
+...
+*/
+
+type SolvedData struct {
+	RatingRange uint
+	Count       uint
+}
+
+/*
 CodeforcesUser
-从数据库中加载建议使用LoadFromDB函数
-如需手动操作
-必须preload所有RatingChanges
-必须preload最后一条Submission
+必须preload所有RatingChanges和最后一条Submission
 才能执行相关函数
 */
 type CodeforcesUser struct {
-	DBUser    db.CodeforcesUser
-	MaxRating uint
+	DBUser         db.CodeforcesUser
+	MaxRating      uint
+	SolvedProblems []SolvedData
 }
 
 func (u *CodeforcesUser) LoadFromDB(handle string) error {
-	return mdb.
-		Preload("Submissions", func(db *gorm.DB) *gorm.DB { return db.Order("at DESC").Limit(1) }).
-		Preload("RatingChanges").Where("handle = ?", handle).First(&u.DBUser).Error
+	if user, err := db.LoadCodeforcesUserByHandle(handle); err != nil {
+		return err
+	} else {
+		u.DBUser = *user
+		return nil
+	}
 }
 
 func (u *CodeforcesUser) FromFetcherUserInfo(user fetcher.CodeforcesUser) error {
@@ -155,7 +168,7 @@ func (u *CodeforcesUser) SaveToDB() error {
 	return nil
 }
 
-func (u *CodeforcesUser) ToRenderUser() *render.CodeforcesUser {
+func (u *CodeforcesUser) ToRenderProfileV1() *render.CodeforcesUser {
 	return &render.CodeforcesUser{
 		Handle:    u.DBUser.Handle,
 		Avatar:    u.DBUser.Avatar,
@@ -163,7 +176,7 @@ func (u *CodeforcesUser) ToRenderUser() *render.CodeforcesUser {
 		Solved:    u.DBUser.Solved,
 		FriendOf:  u.DBUser.FriendCount,
 		CreatedAt: u.DBUser.CreatedAt,
-		Level:     render.ConvertRatingToLevel(u.DBUser.Rating),
+		Level:     render.ConvertRatingToLevel_(u.DBUser.Rating),
 	}
 }
 
@@ -181,6 +194,44 @@ func (u *CodeforcesUser) ToRenderRatingChanges() *render.CodeforcesRatingChanges
 	}
 }
 
+func (u *CodeforcesUser) ToRenderProfileV2() *render.CodeforcesUserProfile {
+	result := make([]render.CodeforcesUserSolvedData, 4)
+
+	result[0].Range = "800+"
+	result[1].Range = "1400+"
+	result[2].Range = "2000+"
+	result[3].Range = "2600+"
+
+	for _, problem := range u.SolvedProblems {
+		switch {
+		case problem.RatingRange < 800:
+		case problem.RatingRange < 1400:
+			result[0].Count += problem.Count
+		case problem.RatingRange < 2000:
+			result[1].Count += problem.Count
+		case problem.RatingRange < 2600:
+			result[2].Count += problem.Count
+		default:
+			result[3].Count += problem.Count
+		}
+	}
+
+	for k, v := range result {
+		result[k].Percent = float32(v.Count) / float32(u.DBUser.Solved) * 100
+	}
+
+	return &render.CodeforcesUserProfile{
+		Avatar:     u.DBUser.Avatar,
+		Handle:     u.DBUser.Handle,
+		MaxRating:  u.MaxRating,
+		FriendOf:   u.DBUser.FriendCount,
+		Rating:     u.DBUser.Rating,
+		Solved:     u.DBUser.Solved,
+		Level:      render.ConvertRatingToLevel(u.DBUser.Rating),
+		SolvedData: result,
+	}
+}
+
 func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 	const normalSubmissionFetchNum = 500
 	const newUserSubmissionFetchNum = 10000
@@ -191,7 +242,7 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 	defer lock.Unlock()
 
 	cacheUser, err := cache.GetCodeforcesUser(handle)
-	if err != nil && !errors.Is(err, redis.Nil) {
+	if err != nil && !cache.IsNil(err) {
 		return nil, err
 	}
 
@@ -202,7 +253,7 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 
 	isNewUser := false
 	if err = result.LoadFromDB(handle); err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
+		if !db.IsNotFound(err) {
 			return nil, err
 		}
 		isNewUser = true
@@ -265,13 +316,11 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 		}
 		result.DBUser.Solved = uint(len(solved))
 	} else {
-		if result := db.GetDBConnection().Raw(`
-		SELECT COUNT(DISTINCT codeforces_problem_id) 
-		FROM codeforces_submissions 
-		WHERE codeforces_user_id = ? AND status = ?`,
-			result.DBUser.ID, db.CodeforcesSubmissionStatusOk).Scan(&result.DBUser.Solved); result.Error != nil {
-			return nil, result.Error
+		solved, err := db.CountCodeforcesSolvedByUID(result.DBUser.ID)
+		if err != nil {
+			return nil, err
 		}
+		result.DBUser.Solved = solved
 	}
 
 	if err = result.SaveToDB(); err != nil {
@@ -281,9 +330,40 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 	// Do Not show submission to outside
 	result.DBUser.Submissions = nil
 
+	// Process data
+
 	for _, change := range *ratingChanges {
 		result.MaxRating = max(result.MaxRating, uint(change.NewRating))
 	}
+
+	solvedProblems, err := db.LoadCodeforcesSolvedProblemByUID(result.DBUser.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	m := make(map[uint]uint)
+
+	for _, problem := range solvedProblems {
+		rg := uint(problem.Rating)
+		if _, ok := m[rg]; ok {
+			m[rg]++
+		} else {
+			m[rg] = 0
+		}
+	}
+
+	for k, v := range m {
+		result.SolvedProblems = append(result.SolvedProblems, SolvedData{
+			RatingRange: k,
+			Count:       v,
+		})
+	}
+
+	sort.Slice(result.SolvedProblems, func(i, j int) bool {
+		return result.SolvedProblems[i].RatingRange > result.SolvedProblems[j].RatingRange
+	})
+
+	// save to redis
 
 	data, err := json.Marshal(result)
 	if err != nil {

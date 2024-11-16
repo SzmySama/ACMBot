@@ -78,3 +78,49 @@ func MigrateCodeforces() error {
 		&CodeforcesRatingChange{},
 	)
 }
+
+func CountCodeforcesSolvedByUID(uid uint) (uint, error) {
+	result := uint(0)
+	if err := GetDBConnection().Raw(`
+		SELECT COUNT(DISTINCT codeforces_problem_id) 
+		FROM codeforces_submissions 
+		WHERE codeforces_user_id = ? AND status = ?`,
+		uid, CodeforcesSubmissionStatusOk).Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result, nil
+}
+
+func LoadCodeforcesUserByHandle(handle string) (*CodeforcesUser, error) {
+	result := &CodeforcesUser{}
+	if err := GetDBConnection().
+		Preload("Submissions", func(db *gorm.DB) *gorm.DB { return db.Order("at DESC").Limit(1) }).
+		Preload("RatingChanges").Where("handle = ?", handle).First(result).Error; err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func LoadCodeforcesSolvedProblemByUID(UID uint) ([]CodeforcesProblem, error) {
+	var submissions []CodeforcesSubmission
+	if err := db.Where("codeforces_user_id = ?", UID).
+		Where("status = ?", CodeforcesSubmissionStatusOk).Find(&submissions).Error; err != nil {
+		return nil, err
+	}
+
+	m := make(map[string]byte) // ProblemID Set
+
+	for _, submission := range submissions {
+		m[submission.CodeforcesProblemID] = 0
+	}
+
+	problemIDs := make([]string, 0, len(m))
+	for k, _ := range m {
+		problemIDs = append(problemIDs, k)
+	}
+	var problems []CodeforcesProblem
+	if err := db.Where("id IN ?", problemIDs).Find(&problems).Error; err != nil {
+		return nil, err
+	}
+	return problems, nil
+}

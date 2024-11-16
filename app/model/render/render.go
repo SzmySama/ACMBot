@@ -14,9 +14,10 @@ var (
 	_playwright *playwright.Playwright
 	_bowers     playwright.Browser
 
-	fullTemplatePath               string
-	codeforcesUserProfileTemplate  *template.Template
-	codeforcesRatingChangeTemplate *template.Template
+	fullTemplatePath                string
+	codeforcesUserProfileV1Template *template.Template
+	codeforcesUserProfileV2Template *template.Template
+	codeforcesRatingChangeTemplate  *template.Template
 )
 
 type Error struct {
@@ -29,7 +30,8 @@ func (e Error) Error() string {
 
 const (
 	templatePath                        = "app/templates/"
-	CodeforcesUserProfileTemplatePath   = templatePath + "codeforces_profile.html"
+	CodeforcesUserProfileV1TemplatePath = templatePath + "codeforces_profile_v1.html"
+	CodeforcesUserProfileV2TemplatePath = templatePath + "codeforces_profile_v2.html"
 	CodeforcesRatingChangesTemplatePath = templatePath + "codeforces_rating_change.html"
 )
 
@@ -74,8 +76,9 @@ func initTemplates() {
 	log.Infof(fullTemplatePath)
 
 	templateMap := map[**template.Template]string{
-		&codeforcesUserProfileTemplate:  CodeforcesUserProfileTemplatePath,
-		&codeforcesRatingChangeTemplate: CodeforcesRatingChangesTemplatePath,
+		&codeforcesUserProfileV1Template: CodeforcesUserProfileV1TemplatePath,
+		&codeforcesUserProfileV2Template: CodeforcesUserProfileV2TemplatePath,
+		&codeforcesRatingChangeTemplate:  CodeforcesRatingChangesTemplatePath,
 	}
 
 	for k, v := range templateMap {
