@@ -348,7 +348,7 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 		if _, ok := m[rg]; ok {
 			m[rg]++
 		} else {
-			m[rg] = 0
+			m[rg] = 1
 		}
 	}
 
