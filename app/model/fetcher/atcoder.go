@@ -1,17 +1,23 @@
 package fetcher
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"sync"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/YourSuzumiya/ACMBot/app/model/errs"
 	"github.com/gocolly/colly/v2"
 	log "github.com/sirupsen/logrus"
 )
 
 type AtcoderUser struct {
-	Name             string
+	Handle           string // Atcoder用户名
+	Avatar           string // 头像URL
 	Rank             string
 	Rating           uint
 	IsProvisional    bool   // 分数是否与水平相符
@@ -22,12 +28,38 @@ type AtcoderUser struct {
 	LastCompeted     string
 }
 
-var c = colly.NewCollector(
-	colly.AllowedDomains("atcoder.jp"),
+type AtcoderUserSubmission struct {
+	SubmissionId   uint    `json:"id"`
+	SubmissionTime int64   `json:"epoch_second"` // 提交时间（UNIX时间戳）
+	ProblemId      string  `json:"problem_id"`
+	ContestId      string  `json:"contest_id"`
+	Handle         string  `json:"user_id"`
+	Language       string  `json:"language"`
+	Point          float32 `json:"point"`
+	Length         uint    `json:"length"`
+	Status         string  `json:"result"` // 提交状态
+	ExecutionTime  int     `json:"execution_time"`
+}
+
+type AtcoderContest struct {
+	Id             string `json:"id"`                 // 比赛ID
+	StartTime      int64  `json:"start_epoch_second"` // 开始时间（UNIX时间戳）
+	DurationSecond uint   `json:"duration_second"`    // 持续时间（秒）
+	Title          string `json:"title"`              // 完整标题
+	RateChange     string `json:"rate_change"`        // Rated分数范围
+}
+
+var (
+	c = colly.NewCollector(
+		colly.AllowedDomains("atcoder.jp"),
+		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"),
+	)
+	atcoderAPILock sync.Mutex
 )
 
-func FetchAtcoderUser(username string) (*AtcoderUser, error) {
-	user := &AtcoderUser{Name: username}
+// handle: Atcoder用户名
+func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
+	user := &AtcoderUser{Handle: handle}
 	var e error = nil
 
 	d := c.Clone()
@@ -73,22 +105,85 @@ func FetchAtcoderUser(username string) (*AtcoderUser, error) {
 		}
 	})
 
-	d.OnError(func(r *colly.Response, err error) {
-		if r != nil {
-			user, e = nil, err
-			if r.StatusCode == http.StatusNotFound {
-				log.Infof(fmt.Sprintf("User not found: %v", username))
-			} else {
-				log.Infof(fmt.Sprintf("Failed to fetch Atcoder user: %v", err))
-			}
-		}
+	d.OnHTML("img.avatar", func(h *colly.HTMLElement) {
+		user.Avatar = h.Attr("src")
 	})
 
-	url := "https://atcoder.jp/users/" + username
+	d.OnError(func(r *colly.Response, err error) {
+		if r == nil {
+			return
+		}
+
+		user, e = nil, err
+		if r.StatusCode == http.StatusNotFound {
+			e = errs.ErrHandleNotFound
+			log.Infof("Handle not found: %v", handle)
+			return
+		}
+		log.Infof("Failed to fetch Atcoder user: %v", err)
+	})
+
+	url := "https://atcoder.jp/users/" + handle
 	log.Infof("Visiting: %v", url)
-	d.Visit(url)
+
+	// Depress Warning
+	_ = d.Visit(url)
 
 	return user, e
+}
+
+func fetchAtcoderAPI[T any](suffix string, args map[string]any) (*T, error) {
+	requestURL := "https://kenkoooo.com/atcoder/" + suffix + "?"
+	for k, v := range args {
+		requestURL += k + "=" + fmt.Sprint(v) + "&"
+	}
+
+	requestURL = requestURL[:len(requestURL)-1]
+	log.Infof("Visiting: %v", requestURL)
+
+	atcoderAPILock.Lock()
+	response, err := http.Get(requestURL)
+	go func() {
+		time.Sleep(100 * time.Nanosecond)
+		atcoderAPILock.Unlock()
+	}()
+
+	if err != nil {
+		log.Infof("Failed to fetch Atcoder API: %v", err)
+		return nil, err
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		log.Infof("Failed to read response body: %v", err)
+		return nil, err
+	}
+
+	if err := response.Body.Close(); err != nil {
+		log.Infof("Failed to close response body: %v", err)
+		return nil, err
+	}
+
+	var res T
+	if err := json.Unmarshal(body, &res); err != nil {
+		log.Infof("Failed to unmarshal response body: %v\n %v", string(body), err)
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+// 获取名为handle的用户，时间从from开始的最多500条提交，from为UNIX时间戳
+func FetchAtcoderUserSubmissionList(handle string, from int64) (*[]AtcoderUserSubmission, error) {
+	return fetchAtcoderAPI[[]AtcoderUserSubmission]("atcoder-api/v3/user/submissions", map[string]any{
+		"user":        handle,
+		"from_second": from,
+	})
+}
+
+// 获取Atcoder比赛列表
+func FetchAtcoderContestList() (*[]AtcoderContest, error) {
+	return fetchAtcoderAPI[[]AtcoderContest]("resources/contests.json", nil)
 }
 
 func atoui(s string) (uint, error) {
