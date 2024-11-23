@@ -7,15 +7,6 @@ import (
 	"time"
 )
 
-var (
-	availableSources = []string{
-		"牛客竞赛",
-		"洛谷",
-		"AtCoder",
-		"Codeforces",
-	}
-)
-
 type Races struct {
 	Data []fetcher.Race
 	Lock sync.RWMutex

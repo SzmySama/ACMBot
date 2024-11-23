@@ -8,8 +8,10 @@ import (
 )
 
 func main() {
-	err := db.MigrateCodeforces()
-	if err != nil {
+	if err := db.MigrateCodeforces(); err != nil {
+		logrus.Fatal(err)
+	}
+	if err := db.MigrateQQ(); err != nil {
 		logrus.Fatal(err)
 	}
 	bot.Start()

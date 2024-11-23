@@ -44,6 +44,7 @@ func Start() {
 
 	zero.OnCommand("cf").Handle(codeforcesUserProfileV2Handler)
 
+	zero.OnCommand("bind").Handle(bindCodeforcesIDHandler)
 	zero.OnCommand("菜单").Handle(menuHandler)
 	zero.OnCommand("help").Handle(menuHandler)
 
@@ -155,6 +156,21 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 	}
 }
 
+func bindCodeforcesIDHandler(ctx *zero.Ctx) {
+	codeforcesID := strings.Split(ctx.MessageString(), " ")[1:]
+	if len(codeforcesID) > 1 {
+		ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " +
+			"一个QQ号只能绑定一个codeforces账号哦")
+		return
+	} else if len(codeforcesID) == 0 {
+		ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " +
+			"没听到你要绑定到哪个账号呢，请再说一遍吧")
+		return
+	}
+	result := manager.BindQQAndCodeforcesHandler(uint(ctx.Event.UserID), uint(ctx.Event.GroupID), codeforcesID[0])
+	ctx.Send(result)
+}
+
 func allRaceHandler(ctx *zero.Ctx) {
 	race, err := manager.GetStuACMRaces()
 	if err != nil {
@@ -178,6 +194,8 @@ func menuHandler(ctx *zero.Ctx) {
 		"2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线\n"+
 		"3.近期比赛，用于查询近期的比赛数据，数据来源于sdutacm.cn\n"+
 		"4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com\n"+
+		"5.bind [username]，用于绑定codeforces账号\n"+
+		"6.rank，用于查询群内codeforces排行榜\n"+
 		"项目地址https://github.com/YourSuzumiya/ACMBot，喜欢可以加个Star支持一下\n"+
 		"Bot可以直接拉到自己群里用哦",
 		CommandPrefix,

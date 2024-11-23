@@ -29,12 +29,13 @@ func init() {
 }
 
 type CodeforcesUser struct {
-	Handle      string `json:"handle"`
-	Avatar      string `json:"avatar"`
-	Rating      uint   `json:"rating"`
-	Solved      uint
-	FriendCount uint      `json:"friendOfCount"`
-	CreatedAt   time.Time `json:"-"`
+	Handle       string `json:"handle"`
+	Avatar       string `json:"avatar"`
+	Rating       uint   `json:"rating"`
+	Solved       uint
+	FriendCount  uint      `json:"friendOfCount"`
+	Organization string    `json:"organization"`
+	CreatedAt    time.Time `json:"-"`
 }
 
 func (u *CodeforcesUser) UnmarshalJSON(data []byte) error {

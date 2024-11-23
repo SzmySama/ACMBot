@@ -3,7 +3,6 @@ module github.com/YourSuzumiya/ACMBot
 go 1.23.0
 
 require (
-	github.com/RomiChan/syncx v0.0.0-20221202055724-5f842c53020e
 	github.com/go-sql-driver/mysql v1.7.0
 	github.com/playwright-community/playwright-go v0.4501.1
 	github.com/redis/go-redis/v9 v9.7.0
@@ -11,6 +10,7 @@ require (
 	github.com/spf13/viper v1.19.0
 	github.com/wdvxdr1123/ZeroBot v1.7.4
 	gorm.io/driver/mysql v1.5.7
+	gorm.io/driver/sqlite v1.5.6
 	gorm.io/gorm v1.25.11
 )
 
@@ -27,6 +27,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
+	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
