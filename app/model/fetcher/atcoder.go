@@ -1,13 +1,16 @@
 package fetcher
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
+
+	"golang.org/x/time/rate"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/YourSuzumiya/ACMBot/app/model/errs"
@@ -54,7 +57,7 @@ var (
 		colly.AllowedDomains("atcoder.jp"),
 		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"),
 	)
-	atcoderAPILock sync.Mutex
+	atcoderLimiter = rate.NewLimiter(rate.Every(2*time.Second), 1)
 )
 
 // handle: Atcoder用户名
@@ -141,14 +144,15 @@ func fetchAtcoderAPI[T any](suffix string, args map[string]any) (*T, error) {
 	requestURL = requestURL[:len(requestURL)-1]
 	log.Infof("Visiting: %v", requestURL)
 
-	atcoderAPILock.Lock()
-	response, err := http.Get(requestURL)
-	go func() {
-		time.Sleep(100 * time.Nanosecond)
-		atcoderAPILock.Unlock()
-	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 30 * time.Second)
+	defer cancel()
+	if err := atcoderLimiter.Wait(ctx); err != nil {
+		log.Infof("Timeout or cancelled while waiting: %v", err)
+		return nil, err
+	}
 
-	if err != nil {
+	response, err := http.Get(requestURL)
+	if err != nil && errors.Is(err, io.EOF) {
 		log.Infof("Failed to fetch Atcoder API: %v", err)
 		return nil, err
 	}
