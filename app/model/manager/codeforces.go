@@ -36,7 +36,6 @@ CodeforcesUser
 */
 type CodeforcesUser struct {
 	DBUser         db.CodeforcesUser
-	MaxRating      uint
 	SolvedProblems []SolvedData
 }
 
@@ -54,7 +53,8 @@ func (u *CodeforcesUser) FromFetcherUserInfo(user fetcher.CodeforcesUser) error 
 	u.DBUser.Avatar = user.Avatar
 	u.DBUser.Rating = user.Rating
 	u.DBUser.FriendCount = user.FriendCount
-	u.DBUser.CreatedAt = user.CreatedAt
+	u.DBUser.MaxRating = user.MaxRating
+	u.DBUser.CreatedAt = time.Unix(user.CreatedAt, 0)
 	return nil
 }
 
@@ -67,7 +67,7 @@ func (u *CodeforcesUser) FromFetcherRatingChanges(changes []fetcher.CodeforcesRa
 	firstNewRatingChangeIdx := -1
 
 	for idx, change := range changes {
-		if change.At.After(lastRatingChangeInDB) {
+		if time.Unix(change.At, 0).After(lastRatingChangeInDB) {
 			firstNewRatingChangeIdx = idx
 			break
 		}
@@ -80,7 +80,7 @@ func (u *CodeforcesUser) FromFetcherRatingChanges(changes []fetcher.CodeforcesRa
 	for _, change := range changes[firstNewRatingChangeIdx:] {
 		u.DBUser.RatingChanges = append(u.DBUser.RatingChanges, db.CodeforcesRatingChange{
 			CodeforcesUserID: u.DBUser.ID,
-			At:               change.At,
+			At:               time.Unix(change.At, 0),
 			NewRating:        change.NewRating,
 		})
 	}
@@ -96,7 +96,7 @@ func (u *CodeforcesUser) FromFetcherSubmissions(submissions []fetcher.Codeforces
 	lastOldSubmissionIdx := len(submissions)
 
 	for i := len(submissions) - 1; i >= 0; i-- {
-		if !submissions[i].At.After(lastSubmissionInDB) {
+		if !time.Unix(submissions[i].At, 0).After(lastSubmissionInDB) {
 			lastOldSubmissionIdx = i
 		} else {
 			break
@@ -112,7 +112,7 @@ func (u *CodeforcesUser) FromFetcherSubmissions(submissions []fetcher.Codeforces
 		dbSubmission := db.CodeforcesSubmission{
 			CodeforcesUserID:    u.DBUser.ID,
 			CodeforcesProblemID: id,
-			At:                  submission.At,
+			At:                  time.Unix(submission.At, 0),
 			Status:              submission.Status,
 		}
 
@@ -125,7 +125,7 @@ func (u *CodeforcesUser) FromFetcherSubmissions(submissions []fetcher.Codeforces
 	}
 
 	s := make([]db.CodeforcesProblem, 0, len(problemID2problem))
-	for id, _ := range problemID2submission {
+	for id := range problemID2submission {
 		s = append(s, db.CodeforcesProblem{
 			ID:     id,
 			Rating: problemID2problem[id].Rating,
@@ -133,8 +133,8 @@ func (u *CodeforcesUser) FromFetcherSubmissions(submissions []fetcher.Codeforces
 	}
 
 	if len(s) > 0 {
-		if result := mdb.Save(s); result.Error != nil {
-			return result.Error
+		if err := db.SaveCodeforcesProblems(s); err != nil {
+			return err
 		}
 	}
 
@@ -151,16 +151,17 @@ func (u *CodeforcesUser) SaveToDB() error {
 		submissions = u.DBUser.Submissions
 		u.DBUser.Submissions = []db.CodeforcesSubmission{}
 	}
-	if err = mdb.Save(&u.DBUser).Error; err != nil {
+	if err = db.SaveCodeforcesUser(&u.DBUser); err != nil {
 		return err
 	}
+
 	if submissions != nil {
-		for i, _ := range submissions {
+		for i := range submissions {
 			submissions[i].CodeforcesUserID = u.DBUser.ID
 		}
 
 		for i := 0; i < len(submissions); i += mx {
-			if err = mdb.Save(submissions[i:min(len(submissions), i+mx)]).Error; err != nil {
+			if err = db.SaveCodeforcesSubmissions(submissions[i:min(len(submissions), i+mx)]); err != nil {
 				return err
 			}
 		}
@@ -170,13 +171,12 @@ func (u *CodeforcesUser) SaveToDB() error {
 
 func (u *CodeforcesUser) ToRenderProfileV1() *render.CodeforcesUser {
 	return &render.CodeforcesUser{
-		Handle:    u.DBUser.Handle,
-		Avatar:    u.DBUser.Avatar,
-		Rating:    u.DBUser.Rating,
-		Solved:    u.DBUser.Solved,
-		FriendOf:  u.DBUser.FriendCount,
-		CreatedAt: u.DBUser.CreatedAt,
-		Level:     render.ConvertRatingToLevel_(u.DBUser.Rating),
+		Handle:   u.DBUser.Handle,
+		Avatar:   u.DBUser.Avatar,
+		Rating:   u.DBUser.Rating,
+		Solved:   u.DBUser.Solved,
+		FriendOf: u.DBUser.FriendCount,
+		Level:    render.ConvertRatingToLevel(u.DBUser.Rating),
 	}
 }
 
@@ -184,7 +184,7 @@ func (u *CodeforcesUser) ToRenderRatingChanges() *render.CodeforcesRatingChanges
 	ratingChanges := make([]render.CodeforcesRatingChange, len(u.DBUser.RatingChanges))
 	for i, change := range u.DBUser.RatingChanges {
 		ratingChanges[i] = render.CodeforcesRatingChange{
-			At:        change.At,
+			At:        change.At.Unix(),
 			NewRating: change.NewRating,
 		}
 	}
@@ -223,7 +223,7 @@ func (u *CodeforcesUser) ToRenderProfileV2() *render.CodeforcesUserProfile {
 	return &render.CodeforcesUserProfile{
 		Avatar:     u.DBUser.Avatar,
 		Handle:     u.DBUser.Handle,
-		MaxRating:  u.MaxRating,
+		MaxRating:  u.DBUser.MaxRating,
 		FriendOf:   u.DBUser.FriendCount,
 		Rating:     u.DBUser.Rating,
 		Solved:     u.DBUser.Solved,
@@ -290,7 +290,7 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 		if len(*correctSubmissions) == 0 {
 			break
 		}
-		flag = (*correctSubmissions)[0].At.Before(lastSubmissionInDB)
+		flag = time.Unix((*correctSubmissions)[0].At, 0).Before(lastSubmissionInDB)
 		count += fetchNum
 		submissions = append(submissions, *correctSubmissions...)
 	}
@@ -314,7 +314,7 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 				solved[submission.Problem.ID()] = 1
 			}
 		}
-		result.DBUser.Solved = uint(len(solved))
+		result.DBUser.Solved = len(solved)
 	} else {
 		solved, err := db.CountCodeforcesSolvedByUID(result.DBUser.ID)
 		if err != nil {
@@ -331,10 +331,6 @@ func GetUpdatedCodeforcesUser(handle string) (*CodeforcesUser, error) {
 	result.DBUser.Submissions = nil
 
 	// Process data
-
-	for _, change := range *ratingChanges {
-		result.MaxRating = max(result.MaxRating, uint(change.NewRating))
-	}
 
 	solvedProblems, err := db.LoadCodeforcesSolvedProblemByUID(result.DBUser.ID)
 	if err != nil {

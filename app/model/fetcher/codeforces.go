@@ -31,25 +31,11 @@ func init() {
 type CodeforcesUser struct {
 	Handle      string `json:"handle"`
 	Avatar      string `json:"titlePhoto"`
-	Rating      uint   `json:"rating"`
-	Solved      uint
-	FriendCount uint      `json:"friendOfCount"`
-	CreatedAt   time.Time `json:"-"`
-}
-
-func (u *CodeforcesUser) UnmarshalJSON(data []byte) error {
-	type alias CodeforcesUser
-	aux := &struct {
-		T int64 `json:"registrationTimeSeconds"`
-		*alias
-	}{
-		alias: (*alias)(u),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	u.CreatedAt = time.Unix(aux.T, 0)
-	return nil
+	Rating      int    `json:"rating"`
+	MaxRating   int    `json:"maxRating"`
+	Solved      int
+	FriendCount int   `json:"friendOfCount"`
+	CreatedAt   int64 `json:"registrationTimeSeconds"`
 }
 
 type CodeforcesProblem struct {
@@ -69,29 +55,14 @@ func (p *CodeforcesProblem) ID() string {
 
 type CodeforcesSubmission struct {
 	ID      uint              `json:"id"`
-	At      time.Time         `json:"-"`
+	At      int64             `json:"creationTimeSeconds"`
 	Status  string            `json:"verdict"`
 	Problem CodeforcesProblem `json:"problem"`
 }
 
-func (s *CodeforcesSubmission) UnmarshalJSON(data []byte) error {
-	type alias CodeforcesSubmission
-	aux := &struct {
-		T int64 `json:"creationTimeSeconds"`
-		*alias
-	}{
-		alias: (*alias)(s),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	s.At = time.Unix(aux.T, 0)
-	return nil
-}
-
 type CodeforcesRatingChange struct {
-	At        time.Time `json:"-"`
-	NewRating int       `json:"newRating"`
+	At        int64 `json:"ratingUpdateTimeSeconds"`
+	NewRating int   `json:"newRating"`
 }
 
 type CodeforcesRace struct {
@@ -102,22 +73,7 @@ type CodeforcesRace struct {
 	Frozen              bool   `json:"frozen"`
 	DurationSeconds     int64  `json:"durationSeconds"`
 	StartTimeSeconds    int64  `json:"startTimeSeconds"`
-	RelativeTimeSeconds int    `json:"relativeTimeSeconds"`
-}
-
-func (r *CodeforcesRatingChange) UnmarshalJSON(data []byte) error {
-	type alias CodeforcesRatingChange
-	aux := &struct {
-		T int64 `json:"ratingUpdateTimeSeconds"`
-		*alias
-	}{
-		alias: (*alias)(r),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	r.At = time.Unix(aux.T, 0)
-	return nil
+	RelativeTimeSeconds int64  `json:"relativeTimeSeconds"`
 }
 
 var cfLock sync.Mutex
@@ -128,9 +84,9 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error
 	time.Sleep(500 * time.Millisecond)
 	type codeforcesResponse[T any] struct {
 		/*
-			codeforces响应数据的基本格式
-			Result是期望的数据
-			Comment是失败时返回的提示信息
+			codeforces响应数据的基本格式:
+				Result->期望的数据
+				Comment->失败时返回的提示信息
 		*/
 		Status  string `json:"status"`
 		Result  T      `json:"result"`

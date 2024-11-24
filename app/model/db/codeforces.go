@@ -33,9 +33,10 @@ type CodeforcesUser struct {
 
 	Handle      string `gorm:"uniqueIndex;index:idx_handle"`
 	Avatar      string
-	Rating      uint
-	FriendCount uint
-	Solved      uint
+	Rating      int
+	MaxRating   int
+	FriendCount int
+	Solved      int
 
 	Submissions   []CodeforcesSubmission
 	RatingChanges []CodeforcesRatingChange
@@ -79,8 +80,8 @@ func MigrateCodeforces() error {
 	)
 }
 
-func CountCodeforcesSolvedByUID(uid uint) (uint, error) {
-	result := uint(0)
+func CountCodeforcesSolvedByUID(uid uint) (int, error) {
+	result := 0
 	if err := GetDBConnection().Raw(`
 		SELECT COUNT(DISTINCT codeforces_problem_id) 
 		FROM codeforces_submissions 
@@ -115,7 +116,7 @@ func LoadCodeforcesSolvedProblemByUID(UID uint) ([]CodeforcesProblem, error) {
 	}
 
 	problemIDs := make([]string, 0, len(m))
-	for k, _ := range m {
+	for k := range m {
 		problemIDs = append(problemIDs, k)
 	}
 	var problems []CodeforcesProblem
@@ -123,4 +124,16 @@ func LoadCodeforcesSolvedProblemByUID(UID uint) ([]CodeforcesProblem, error) {
 		return nil, err
 	}
 	return problems, nil
+}
+
+func SaveCodeforcesProblems(problems []CodeforcesProblem) error {
+	return GetDBConnection().Save(&problems).Error
+}
+
+func SaveCodeforcesUser(user *CodeforcesUser) error {
+	return GetDBConnection().Save(user).Error
+}
+
+func SaveCodeforcesSubmissions(submission []CodeforcesSubmission) error {
+	return GetDBConnection().Save(submission).Error
 }

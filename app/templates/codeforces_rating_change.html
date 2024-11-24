@@ -51,7 +51,7 @@
             const origin_data = {{ .Data }}
 
             const rating_change_data = origin_data.map(item => {
-            const readableDate = convertToReadableDate(item.ratingUpdateTimeSeconds);
+            const readableDate = convertToReadableDate(item.at);
             return [readableDate, item.newRating];
         });
 

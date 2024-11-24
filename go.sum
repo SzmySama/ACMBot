@@ -1,5 +1,7 @@
 github.com/FloatTech/ttl v0.0.0-20220715042055-15612be72f5b h1:tvciXWq2nuvTbFeJGLDNIdRX3BI546D3O7k7vrVueZw=
 github.com/FloatTech/ttl v0.0.0-20220715042055-15612be72f5b/go.mod h1:fHZFWGquNXuHttu9dUYoKuNbm3dzLETnIOnm1muSfDs=
+github.com/PaulXu-cn/go-mod-graph-chart v0.5.3 h1:fg9ytRxEA4tdGzkAZxHe8gFiS/ImjQrknPg8l6NPdJ0=
+github.com/PaulXu-cn/go-mod-graph-chart v0.5.3/go.mod h1:PCJo3cS+W3LXrAcdy5N9J/Swfs9cEd6k6xtlqRP3GAI=
 github.com/RomiChan/syncx v0.0.0-20221202055724-5f842c53020e h1:wR3MXQ3VbUlPKOOUwLOYgh/QaJThBTYtsl673O3lqSA=
 github.com/RomiChan/syncx v0.0.0-20221202055724-5f842c53020e/go.mod h1:vD7Ra3Q9onRtojoY5sMCLQ7JBgjUsrXDnDKyFxqpf9w=
 github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 h1:bBmmB7he0iVN4m5mcehfheeRUEer/Avo4ujnxI3uCqs=
