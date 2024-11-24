@@ -368,7 +368,7 @@ func (u *CodeforcesUser) process() (err error) {
 
 	// 从rating changes中读取maxRating和Rating
 	// ---------------------------------------------------------------------- //
-	if (u.DBUser.Rating == 0 || u.DBUser.MaxRating == 0) && len(u.SolvedProblems) > 0 {
+	if (u.DBUser.Rating == 0 || u.DBUser.MaxRating == 0) && len(u.DBUser.RatingChanges) > 0 {
 		u.DBUser.Rating = u.DBUser.RatingChanges[len(u.DBUser.RatingChanges)-1].NewRating
 		for _, change := range u.DBUser.RatingChanges {
 			u.DBUser.MaxRating = max(u.DBUser.MaxRating, change.NewRating)
