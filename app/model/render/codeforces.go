@@ -113,7 +113,7 @@ func ConvertRatingToLevel(rating int) CodeforcesRatingLevel {
 
 type CodeforcesUserSolvedData struct {
 	Range   string
-	Count   uint
+	Count   int
 	Percent float32
 }
 
