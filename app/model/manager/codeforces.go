@@ -338,12 +338,13 @@ func (u *CodeforcesUser) cruDB(handle string) (err error) {
 // process 对输出数据进行预处理
 func (u *CodeforcesUser) process() (err error) {
 	// Do Not show submission to outside
+	// ---------------------------------------------------------------------- //
 	u.DBUser.Submissions = nil
-
-	// Process data
-
-	solvedProblems, err := db.LoadCodeforcesSolvedProblemByUID(u.DBUser.ID)
-	if err != nil {
+	// ---------------------------------------------------------------------- //
+	// 解题数据
+	// ---------------------------------------------------------------------- //
+	var solvedProblems []db.CodeforcesProblem
+	if solvedProblems, err = db.LoadCodeforcesSolvedProblemByUID(u.DBUser.ID); err != nil {
 		return err
 	}
 
@@ -363,6 +364,18 @@ func (u *CodeforcesUser) process() (err error) {
 	sort.Slice(u.SolvedProblems, func(i, j int) bool {
 		return u.SolvedProblems[i].RatingRange > u.SolvedProblems[j].RatingRange
 	})
+	// ---------------------------------------------------------------------- //
+
+	// 从rating changes中读取maxRating和Rating
+	// ---------------------------------------------------------------------- //
+	if (u.DBUser.Rating == 0 || u.DBUser.MaxRating == 0) && len(u.SolvedProblems) > 0 {
+		u.DBUser.Rating = u.DBUser.RatingChanges[len(u.DBUser.RatingChanges)-1].NewRating
+		for _, change := range u.DBUser.RatingChanges {
+			u.DBUser.MaxRating = max(u.DBUser.MaxRating, change.NewRating)
+		}
+	}
+	// ---------------------------------------------------------------------- //
+
 	return nil
 }
 
