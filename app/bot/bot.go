@@ -167,8 +167,13 @@ func bindCodeforcesIDHandler(ctx *zero.Ctx) {
 			"没听到你要绑定到哪个账号呢，请再说一遍吧")
 		return
 	}
-	result := manager.BindQQAndCodeforcesHandler(uint(ctx.Event.UserID), uint(ctx.Event.GroupID), codeforcesID[0])
-	ctx.Send(result)
+	err := manager.BindQQAndCodeforcesHandler(uint(ctx.Event.UserID), uint(ctx.Event.GroupID), codeforcesID[0])
+	if err != nil {
+		ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " + err.Error())
+		return
+	}
+	ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " +
+		"成功绑定 " + ctx.Event.Sender.NickName + " -> " + codeforcesID[0])
 }
 
 func allRaceHandler(ctx *zero.Ctx) {
