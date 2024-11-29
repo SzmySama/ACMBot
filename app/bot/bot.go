@@ -156,7 +156,7 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 }
 
 func allRaceHandler(ctx *zero.Ctx) {
-	race, err := manager.GetStuACMRaces()
+	race, err := manager.GetStuACMRaces().ToQQMixForwardMessage()
 	if err != nil {
 		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
 	}
@@ -164,7 +164,7 @@ func allRaceHandler(ctx *zero.Ctx) {
 }
 
 func codeforcesRaceHandler(ctx *zero.Ctx) {
-	race, err := manager.GetCodeforcesRaces()
+	race, err := manager.GetCodeforcesRaces().ToQQMixForwardMessage()
 	if err != nil {
 		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
 	}

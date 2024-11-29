@@ -28,6 +28,13 @@ type Race struct {
 	EndTime   time.Time `json:"end_time"`
 }
 
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
 func (r *Race) String() string {
 	d := r.EndTime.Sub(r.StartTime)
 	var dStr string
@@ -49,7 +56,7 @@ func (r *Race) String() string {
 			"传送门🌈: %s",
 		r.Source,
 		r.Name,
-		fmt.Sprintf("%02d天%02d小时%02d分钟", int(leftTime.Hours())/24, int(leftTime.Hours())%24, int(leftTime.Minutes())%60),
+		fmt.Sprintf("%02d天%02d小时%02d分钟", int(leftTime.Hours())/24, abs(int(leftTime.Hours()))%24, abs(int(leftTime.Minutes()))%60),
 		r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
 		dStr,
 		r.Link,
