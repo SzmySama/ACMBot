@@ -29,10 +29,8 @@ type Race struct {
 }
 
 func abs(x int) int {
-	if x < 0 {
-		return -x
-	}
-	return x
+	mask := x >> 31
+	return (x ^ mask) - mask
 }
 
 func (r *Race) String() string {
@@ -44,23 +42,49 @@ func (r *Race) String() string {
 		dStr = fmt.Sprintf("%d小时", h)
 	}
 
-	leftTime := r.StartTime.Sub(time.Now())
+	startLeftTime := r.StartTime.Sub(time.Now())
+	endLeftTime := r.EndTime.Sub(time.Now())
 
-	return fmt.Sprintf(
-		""+
-			"比赛来源: %s\n"+
-			"比赛名称: %s\n"+
-			"剩余时间: %s\n"+
-			"开始时间: %s\n"+
-			"持续时间: %s\n"+
-			"传送门🌈: %s",
-		r.Source,
-		r.Name,
-		fmt.Sprintf("%02d天%02d小时%02d分钟", int(leftTime.Hours())/24, abs(int(leftTime.Hours()))%24, abs(int(leftTime.Minutes()))%60),
-		r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
-		dStr,
-		r.Link,
-	)
+	started := startLeftTime.Milliseconds() < 0
+	finished := endLeftTime.Milliseconds() < 0
+
+	if !started {
+		return fmt.Sprintf(
+			""+
+				"🕣此比赛尚未开始🕦\n"+
+				"比赛来源: %s\n"+
+				"比赛名称: %s\n"+
+				"距离开始: %s\n"+
+				"开始时间: %s\n"+
+				"持续时间: %s\n"+
+				"传送门🌈: %s",
+			r.Source,
+			r.Name,
+			fmt.Sprintf("%02d天%02d小时%02d分钟", int(startLeftTime.Hours())/24, abs(int(startLeftTime.Hours()))%24, abs(int(startLeftTime.Minutes()))%60),
+			r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
+			dStr,
+			r.Link,
+		)
+	}
+	if !finished {
+		return fmt.Sprintf(
+			""+
+				"❗此比赛正在进行中❗\n"+
+				"比赛来源: %s\n"+
+				"比赛名称: %s\n"+
+				"距离结束: %s\n"+
+				"开始时间: %s\n"+
+				"持续时间: %s\n"+
+				"传送门🌈: %s",
+			r.Source,
+			r.Name,
+			fmt.Sprintf("%02d天%02d小时%02d分钟", int(endLeftTime.Hours())/24, abs(int(startLeftTime.Hours()))%24, abs(int(startLeftTime.Minutes()))%60),
+			r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
+			dStr,
+			r.Link,
+		)
+	}
+	return "Internal ERROR! Finished race shouldn't exist!"
 }
 
 func FetchStuACMRaces() ([]Race, error) {
