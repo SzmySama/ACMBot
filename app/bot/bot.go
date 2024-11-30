@@ -167,7 +167,13 @@ func bindCodeforcesIDHandler(ctx *zero.Ctx) {
 			"没听到你要绑定到哪个账号呢，请再说一遍吧")
 		return
 	}
-	err := manager.BindQQAndCodeforcesHandler(uint(ctx.Event.UserID), uint(ctx.Event.GroupID), codeforcesID[0])
+	var qqBind = manager.QQBind{
+		CodeforcesHandle: codeforcesID[0],
+		QID:              uint(ctx.Event.UserID),
+		QQGroupID:        uint(ctx.Event.GroupID),
+		QQName:           ctx.NickName(),
+	}
+	err := manager.BindQQAndCodeforcesHandler(qqBind)
 	if err != nil {
 		ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " + err.Error())
 		return
