@@ -64,7 +64,6 @@ func initDriver() {
 	if err != nil {
 		log.Fatalf("Failed to launch chromium: %v", err)
 	}
-	log.Info(_bowers)
 }
 
 func initTemplates() {
@@ -73,7 +72,6 @@ func initTemplates() {
 		log.Fatalf("Failed to get exec info: %v", err)
 	}
 	fullTemplatePath = path.Dir(execPath + "/" + templatePath)
-	log.Infof(fullTemplatePath)
 
 	templateMap := map[**template.Template]string{
 		&codeforcesUserProfileV1Template: CodeforcesUserProfileV1TemplatePath,

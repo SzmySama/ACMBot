@@ -7,16 +7,18 @@ import (
 	"time"
 )
 
+// TODO: 比赛数据缓存到Redis
+
 type Races struct {
 	Data []fetcher.Race
 	Lock sync.RWMutex
 
 	Err error
 
-	updater func(*Races) error
+	updater func() ([]fetcher.Race, error)
 }
 
-func (r *Races) GetMessage() ([]message.MessageSegment, error) {
+func (r *Races) ToQQMixForwardMessage() ([]message.MessageSegment, error) {
 	r.Lock.RLock()
 	defer r.Lock.RUnlock()
 	result := make([]message.MessageSegment, 0, len(r.Data))
@@ -27,33 +29,22 @@ func (r *Races) GetMessage() ([]message.MessageSegment, error) {
 }
 
 func (r *Races) Update() error {
-	return r.updater(r)
+	r.Lock.Lock()
+	defer r.Lock.Unlock()
+	race, err := r.updater()
+	if err != nil {
+		return err
+	}
+	r.Data = race
+	return nil
 }
 
 var (
 	codeforcesRaces = &Races{
-		updater: func(r *Races) error {
-			r.Lock.Lock()
-			defer r.Lock.Unlock()
-			race, err := fetcher.FetchCodeforcesRaces()
-			if err != nil {
-				return err
-			}
-			r.Data = race
-			return nil
-		},
+		updater: fetcher.FetchCodeforcesRaces,
 	}
 	stuACMRaces = &Races{
-		updater: func(r *Races) error {
-			r.Lock.Lock()
-			defer r.Lock.Unlock()
-			race, err := fetcher.FetchStuACMRaces()
-			if err != nil {
-				return err
-			}
-			r.Data = race
-			return nil
-		},
+		updater: fetcher.FetchStuACMRaces,
 	}
 	allRaces = []*Races{
 		codeforcesRaces,
@@ -61,12 +52,12 @@ var (
 	}
 )
 
-func GetCodeforcesRaces() ([]message.MessageSegment, error) {
-	return codeforcesRaces.GetMessage()
+func GetCodeforcesRaces() *Races {
+	return codeforcesRaces
 }
 
-func GetStuACMRaces() ([]message.MessageSegment, error) {
-	return stuACMRaces.GetMessage()
+func GetStuACMRaces() *Races {
+	return stuACMRaces
 }
 
 func RaceUpdater() {

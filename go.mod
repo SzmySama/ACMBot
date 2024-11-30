@@ -16,6 +16,7 @@ require (
 
 require (
 	github.com/FloatTech/ttl v0.0.0-20220715042055-15612be72f5b // indirect
+	github.com/PaulXu-cn/go-mod-graph-chart v0.5.3 // indirect
 	github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect

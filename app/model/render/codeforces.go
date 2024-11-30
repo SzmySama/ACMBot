@@ -2,71 +2,18 @@ package render
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app/model/errs"
 	"github.com/playwright-community/playwright-go"
-	"time"
 )
 
-type CodeforcesRatingLevel_ string
-
-func ConvertRatingToLevel_(rating uint) CodeforcesRatingLevel_ {
-	const (
-		CodeforcesRatingLevelNewbie                   CodeforcesRatingLevel_ = "newbie"
-		CodeforcesRatingLevelPupil                    CodeforcesRatingLevel_ = "pupil"
-		CodeforcesRatingLevelSpecialist               CodeforcesRatingLevel_ = "specialist"
-		CodeforcesRatingLevelExpert                   CodeforcesRatingLevel_ = "expert"
-		CodeforcesRatingLevelCandidateMaster          CodeforcesRatingLevel_ = "candidate-master"
-		CodeforcesRatingLevelMaster                   CodeforcesRatingLevel_ = "master"
-		CodeforcesRatingLevelInternationalMaster      CodeforcesRatingLevel_ = "international-master"
-		CodeforcesRatingLevelGrandmaster              CodeforcesRatingLevel_ = "grandmaster"
-		CodeforcesRatingLevelInternationalGrandmaster CodeforcesRatingLevel_ = "international-grandmaster"
-		CodeforcesRatingLevelLegendaryGrandmaster     CodeforcesRatingLevel_ = "legendary-grandmaster"
-	)
-	switch {
-	case rating < 1200:
-		return CodeforcesRatingLevelNewbie
-	case rating < 1400:
-		return CodeforcesRatingLevelPupil
-	case rating < 1600:
-		return CodeforcesRatingLevelSpecialist
-	case rating < 1900:
-		return CodeforcesRatingLevelExpert
-	case rating < 2100:
-		return CodeforcesRatingLevelCandidateMaster
-	case rating < 2300:
-		return CodeforcesRatingLevelMaster
-	case rating < 2400:
-		return CodeforcesRatingLevelInternationalMaster
-	case rating < 2600:
-		return CodeforcesRatingLevelGrandmaster
-	case rating < 3000:
-		return CodeforcesRatingLevelInternationalGrandmaster
-	default:
-		return CodeforcesRatingLevelLegendaryGrandmaster
-	}
-}
-
 type CodeforcesUser struct {
-	Handle    string `gorm:"primaryKey;not null;type:varchar(255)" json:"handle"`
-	Avatar    string `json:"avatar"`
-	Rating    uint   `json:"rating"`
-	Solved    uint
-	FriendOf  uint      `json:"friendOfCount"`
-	CreatedAt time.Time `json:"-"`
-	Level     CodeforcesRatingLevel_
-}
-
-func (u *CodeforcesUser) MarshalJSON() ([]byte, error) {
-	type alias CodeforcesUser
-	return json.Marshal(&struct {
-		T int64 `json:"registrationTimeSeconds"`
-		*alias
-	}{
-		T:     u.CreatedAt.Unix(),
-		alias: (*alias)(u),
-	})
+	Handle   string `gorm:"primaryKey;not null;type:varchar(255)" json:"handle"`
+	Avatar   string `json:"avatar"`
+	Rating   int    `json:"rating"`
+	Solved   int
+	FriendOf int `json:"friendOfCount"`
+	Level    CodeforcesRatingLevel
 }
 
 func (u *CodeforcesUser) ToImage() ([]byte, error) {
@@ -89,19 +36,8 @@ func (u *CodeforcesUser) ToImage() ([]byte, error) {
 }
 
 type CodeforcesRatingChange struct {
-	At        time.Time `json:"-"`
-	NewRating int       `json:"newRating"`
-}
-
-func (r *CodeforcesRatingChange) MarshalJSON() ([]byte, error) {
-	type alias CodeforcesRatingChange
-	return json.Marshal(&struct {
-		T int64 `json:"ratingUpdateTimeSeconds"`
-		*alias
-	}{
-		T:     r.At.Unix(),
-		alias: (*alias)(r),
-	})
+	At        int64 `json:"at"`
+	NewRating int   `json:"newRating"`
 }
 
 type CodeforcesRatingChanges struct {
@@ -135,7 +71,7 @@ func (r *CodeforcesRatingChanges) ToImage() ([]byte, error) {
 
 type CodeforcesRatingLevel string
 
-func ConvertRatingToLevel(rating uint) CodeforcesRatingLevel {
+func ConvertRatingToLevel(rating int) CodeforcesRatingLevel {
 	const (
 		CodeforcesRatingLevelNewbie                   CodeforcesRatingLevel = "Newbie"
 		CodeforcesRatingLevelPupil                    CodeforcesRatingLevel = "Pupil"
@@ -177,18 +113,18 @@ func ConvertRatingToLevel(rating uint) CodeforcesRatingLevel {
 
 type CodeforcesUserSolvedData struct {
 	Range   string
-	Count   uint
+	Count   int
 	Percent float32
 }
 
 type CodeforcesUserProfile struct {
 	Avatar    string
 	Handle    string
-	MaxRating uint
-	FriendOf  uint
-	Rating    uint
+	MaxRating int
+	FriendOf  int
+	Rating    int
 	Level     CodeforcesRatingLevel
-	Solved    uint
+	Solved    int
 
 	SolvedData []CodeforcesUserSolvedData
 }

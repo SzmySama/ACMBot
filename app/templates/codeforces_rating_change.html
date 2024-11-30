@@ -37,21 +37,21 @@
 </head>
 
 <body>
-    <div id="main" style="width: 1000px;height:500px;"></div>
-    <script>
-        function convertToReadableDate(seconds) {
-            const date = new Date(seconds * 1000);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
+<div id="main" style="width: 1000px;height:500px;"></div>
+<script>
+    function convertToReadableDate(seconds) {
+        const date = new Date(seconds * 1000);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const origin_data = {{ .Data }}
+    document.addEventListener("DOMContentLoaded", function () {
+        const origin_data = {{ .Data }}
 
-            const rating_change_data = origin_data.map(item => {
-            const readableDate = convertToReadableDate(item.ratingUpdateTimeSeconds);
+        const rating_change_data = origin_data.map(item => {
+            const readableDate = convertToReadableDate(item.at);
             return [readableDate, item.newRating];
         });
 
@@ -171,8 +171,8 @@
         };
         option && myChart.setOption(option);
 
-        });
-    </script>
+    });
+</script>
 </body>
 
 </html>

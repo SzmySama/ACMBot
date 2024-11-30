@@ -29,28 +29,13 @@ func init() {
 }
 
 type CodeforcesUser struct {
-	Handle       string `json:"handle"`
-	Avatar       string `json:"avatar"`
-	Rating       uint   `json:"rating"`
-	Solved       uint
-	FriendCount  uint      `json:"friendOfCount"`
-	Organization string    `json:"organization"`
-	CreatedAt    time.Time `json:"-"`
-}
-
-func (u *CodeforcesUser) UnmarshalJSON(data []byte) error {
-	type alias CodeforcesUser
-	aux := &struct {
-		T int64 `json:"registrationTimeSeconds"`
-		*alias
-	}{
-		alias: (*alias)(u),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	u.CreatedAt = time.Unix(aux.T, 0)
-	return nil
+	Handle      string `json:"handle"`
+	Avatar      string `json:"titlePhoto"`
+	Rating      int    `json:"rating"`
+	MaxRating   int    `json:"maxRating"`
+	Solved      int
+	FriendCount int   `json:"friendOfCount"`
+	CreatedAt   int64 `json:"registrationTimeSeconds"`
 }
 
 type CodeforcesProblem struct {
@@ -70,29 +55,14 @@ func (p *CodeforcesProblem) ID() string {
 
 type CodeforcesSubmission struct {
 	ID      uint              `json:"id"`
-	At      time.Time         `json:"-"`
+	At      int64             `json:"creationTimeSeconds"`
 	Status  string            `json:"verdict"`
 	Problem CodeforcesProblem `json:"problem"`
 }
 
-func (s *CodeforcesSubmission) UnmarshalJSON(data []byte) error {
-	type alias CodeforcesSubmission
-	aux := &struct {
-		T int64 `json:"creationTimeSeconds"`
-		*alias
-	}{
-		alias: (*alias)(s),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	s.At = time.Unix(aux.T, 0)
-	return nil
-}
-
 type CodeforcesRatingChange struct {
-	At        time.Time `json:"-"`
-	NewRating int       `json:"newRating"`
+	At        int64 `json:"ratingUpdateTimeSeconds"`
+	NewRating int   `json:"newRating"`
 }
 
 type CodeforcesRace struct {
@@ -103,35 +73,25 @@ type CodeforcesRace struct {
 	Frozen              bool   `json:"frozen"`
 	DurationSeconds     int64  `json:"durationSeconds"`
 	StartTimeSeconds    int64  `json:"startTimeSeconds"`
-	RelativeTimeSeconds int    `json:"relativeTimeSeconds"`
+	RelativeTimeSeconds int64  `json:"relativeTimeSeconds"`
 }
 
-func (r *CodeforcesRatingChange) UnmarshalJSON(data []byte) error {
-	type alias CodeforcesRatingChange
-	aux := &struct {
-		T int64 `json:"ratingUpdateTimeSeconds"`
-		*alias
-	}{
-		alias: (*alias)(r),
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-	r.At = time.Unix(aux.T, 0)
-	return nil
+func zero[T any]() T {
+	var t T
+	return t
 }
 
 var cfLock sync.Mutex
 
-func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error) {
+func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error) {
 	cfLock.Lock()
 	defer cfLock.Unlock()
 	time.Sleep(500 * time.Millisecond)
 	type codeforcesResponse[T any] struct {
 		/*
-			codeforces响应数据的基本格式
-			Result是期望的数据
-			Comment是失败时返回的提示信息
+			codeforces响应数据的基本格式:
+				Result->期望的数据
+				Comment->失败时返回的提示信息
 		*/
 		Status  string `json:"status"`
 		Result  T      `json:"result"`
@@ -166,7 +126,7 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error
 
 	resp, err := http.Get(apiFullURL)
 	if err != nil {
-		return nil, err
+		return zero[T](), err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -177,23 +137,22 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return zero[T](), err
 	}
 
 	var res codeforcesResponse[T]
 	if err := json.Unmarshal(body, &res); err != nil {
-		return nil, err
+		return zero[T](), err
 	}
-
 	if res.Status != "OK" {
 		if strings.HasSuffix(res.Comment, "not found") {
-			return nil, errs.ErrHandleNotFound
+			return zero[T](), errs.ErrHandleNotFound
 		}
 		log.Infof("Status is not OK")
-		return nil, fmt.Errorf(res.Comment)
+		return zero[T](), fmt.Errorf(res.Comment)
 	}
 
-	return &res.Result, nil
+	return res.Result, nil
 }
 
 /*
@@ -201,14 +160,14 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (*T, error
 	因为期望类型未知，不一定是slice
 */
 
-func FetchCodeforcesUsersInfo(handles []string, checkHistoricHandles bool) (*[]CodeforcesUser, error) {
+func FetchCodeforcesUsersInfo(handles []string, checkHistoricHandles bool) ([]CodeforcesUser, error) {
 	return fetchCodeforcesAPI[[]CodeforcesUser]("user.info", map[string]any{
 		"handles":              strings.Join(handles, ";"),
 		"checkHistoricHandles": checkHistoricHandles,
 	})
 }
 
-func FetchCodeforcesUserSubmissions(handle string, from, count int) (*[]CodeforcesSubmission, error) {
+func FetchCodeforcesSubmissions(handle string, from, count int) ([]CodeforcesSubmission, error) {
 	return fetchCodeforcesAPI[[]CodeforcesSubmission]("user.status", map[string]any{
 		"handle": handle,
 		"from":   from,
@@ -216,14 +175,83 @@ func FetchCodeforcesUserSubmissions(handle string, from, count int) (*[]Codeforc
 	})
 }
 
-func FetchCodeforcesUserRatingChanges(handle string) (*[]CodeforcesRatingChange, error) {
+func FetchCodeforcesRatingChanges(handle string) ([]CodeforcesRatingChange, error) {
 	return fetchCodeforcesAPI[[]CodeforcesRatingChange]("user.rating", map[string]any{
 		"handle": handle,
 	})
 }
 
-func FetchCodeforcesContestList(gym bool) (*[]CodeforcesRace, error) {
+func FetchCodeforcesContestList(gym bool) ([]CodeforcesRace, error) {
 	return fetchCodeforcesAPI[[]CodeforcesRace]("contest.list", map[string]any{
 		"gym": gym,
 	})
+}
+
+func FetchCodeforcesUserInfo(handle string, checkHistoricHandles bool) (*CodeforcesUser, error) {
+	users, err := FetchCodeforcesUsersInfo([]string{handle}, checkHistoricHandles)
+	if err != nil {
+		return nil, err
+	}
+	if len(users) != 1 {
+		return nil, errs.ErrHandleNotFound
+	}
+	return &users[0], nil
+}
+
+func FetchCodeforcesRatingChangesAfter(handle string, after time.Time) ([]CodeforcesRatingChange, error) {
+	allChanges, err := FetchCodeforcesRatingChanges(handle)
+	if err != nil {
+		return nil, err
+	}
+	if after.Unix() == 0 {
+		return allChanges, nil
+	}
+	for i, change := range allChanges {
+		if time.Unix(change.At, 0).After(after) {
+			return allChanges[i:], nil
+		}
+	}
+	return []CodeforcesRatingChange{}, nil
+}
+
+func FetchCodeforcesSubmissionsAfter(handle string, after time.Time) ([]CodeforcesSubmission, error) {
+	perFetch := 500
+	if after.Unix() == 0 {
+		perFetch = 10000
+	}
+	allSubmissions := make([]CodeforcesSubmission, 0, perFetch)
+	count := 1
+	for {
+		correct, err := FetchCodeforcesSubmissions(handle, count, perFetch)
+		if err != nil {
+			return nil, err
+		}
+		if len(correct) == 0 {
+			break
+		}
+		correctStart := time.Unix(correct[0].At, 0)            // 最晚的submission
+		correctEnd := time.Unix(correct[len(correct)-1].At, 0) // 最早的submission
+		// 所有submission都早于期望时间
+		if correctStart.Before(after) {
+			break
+			// 有部分submission早于期望时间
+		} else if correctEnd.Before(after) {
+			for _, submission := range correct {
+				// 早于或等于的都不要
+				if !time.Unix(submission.At, 0).After(after) {
+					break
+				}
+				allSubmissions = append(allSubmissions, submission)
+			}
+			break
+			// 全部submission都在期望时间之后
+		} else {
+			allSubmissions = append(allSubmissions, correct...)
+		}
+		if len(correct) < perFetch {
+			break
+		}
+		count += perFetch
+	}
+	return allSubmissions, nil
 }
