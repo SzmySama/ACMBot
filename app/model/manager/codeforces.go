@@ -36,6 +36,7 @@ CodeforcesUser
 type CodeforcesUser struct {
 	DBUser         db.CodeforcesUser
 	SolvedProblems []SolvedData
+	SolvedCount    int
 }
 
 func (u *CodeforcesUser) ToRenderProfileV1() *render.CodeforcesUser {
@@ -43,7 +44,7 @@ func (u *CodeforcesUser) ToRenderProfileV1() *render.CodeforcesUser {
 		Handle:   u.DBUser.Handle,
 		Avatar:   u.DBUser.Avatar,
 		Rating:   u.DBUser.Rating,
-		Solved:   u.DBUser.Solved,
+		Solved:   u.SolvedCount,
 		FriendOf: u.DBUser.FriendCount,
 		Level:    render.ConvertRatingToLevel(u.DBUser.Rating),
 	}
@@ -86,7 +87,7 @@ func (u *CodeforcesUser) ToRenderProfileV2() *render.CodeforcesUserProfile {
 	}
 
 	for k, v := range result {
-		result[k].Percent = float32(v.Count) / float32(u.DBUser.Solved) * 100
+		result[k].Percent = float32(v.Count) / float32(u.SolvedCount) * 100
 	}
 
 	return &render.CodeforcesUserProfile{
@@ -95,13 +96,13 @@ func (u *CodeforcesUser) ToRenderProfileV2() *render.CodeforcesUserProfile {
 		MaxRating:  u.DBUser.MaxRating,
 		FriendOf:   u.DBUser.FriendCount,
 		Rating:     u.DBUser.Rating,
-		Solved:     u.DBUser.Solved,
+		Solved:     u.SolvedCount,
 		Level:      render.ConvertRatingToLevel(u.DBUser.Rating),
 		SolvedData: result,
 	}
 }
 
-func (u *CodeforcesUser) fromFetcherUserInfo(user fetcher.CodeforcesUser) error {
+func (u *CodeforcesUser) fromFetcherUserInfo(user *fetcher.CodeforcesUser) error {
 	u.DBUser.Handle = user.Handle
 	u.DBUser.Avatar = user.Avatar
 	u.DBUser.Rating = user.Rating
@@ -112,25 +113,7 @@ func (u *CodeforcesUser) fromFetcherUserInfo(user fetcher.CodeforcesUser) error 
 }
 
 func (u *CodeforcesUser) fromFetcherRatingChanges(changes []fetcher.CodeforcesRatingChange) error {
-	lastRatingChangeInDB := time.Unix(0, 0)
-	if len(u.DBUser.RatingChanges) > 0 {
-		lastRatingChangeInDB = u.DBUser.RatingChanges[len(u.DBUser.RatingChanges)-1].At
-	}
-
-	firstNewRatingChangeIdx := -1
-
-	for idx, change := range changes {
-		if time.Unix(change.At, 0).After(lastRatingChangeInDB) {
-			firstNewRatingChangeIdx = idx
-			break
-		}
-	}
-
-	if firstNewRatingChangeIdx == -1 {
-		return nil
-	}
-
-	for _, change := range changes[firstNewRatingChangeIdx:] {
+	for _, change := range changes {
 		u.DBUser.RatingChanges = append(u.DBUser.RatingChanges, db.CodeforcesRatingChange{
 			CodeforcesUserID: u.DBUser.ID,
 			At:               time.Unix(change.At, 0),
@@ -141,26 +124,11 @@ func (u *CodeforcesUser) fromFetcherRatingChanges(changes []fetcher.CodeforcesRa
 }
 
 func (u *CodeforcesUser) fromFetcherSubmissions(submissions []fetcher.CodeforcesSubmission) error {
-	lastSubmissionInDB := time.Unix(0, 0)
-	if len(u.DBUser.Submissions) > 0 {
-		lastSubmissionInDB = u.DBUser.Submissions[len(u.DBUser.Submissions)-1].At
-	}
-
-	lastOldSubmissionIdx := len(submissions)
-
-	for i := len(submissions) - 1; i >= 0; i-- {
-		if !time.Unix(submissions[i].At, 0).After(lastSubmissionInDB) {
-			lastOldSubmissionIdx = i
-		} else {
-			break
-		}
-	}
-
 	problemID2submission := make(map[string][]db.CodeforcesSubmission)
 	problemID2problem := make(map[string]db.CodeforcesProblem)
-	newSubmissions := make([]db.CodeforcesSubmission, 0, len(submissions[:lastOldSubmissionIdx]))
+	newSubmissions := make([]db.CodeforcesSubmission, 0, len(submissions))
 
-	for _, submission := range submissions[:lastOldSubmissionIdx] {
+	for _, submission := range submissions {
 		id := submission.Problem.ID()
 		dbSubmission := db.CodeforcesSubmission{
 			CodeforcesUserID:    u.DBUser.ID,
@@ -204,31 +172,41 @@ func (u *CodeforcesUser) loadFromDB(handle string) error {
 	}
 }
 
-func (u *CodeforcesUser) saveToDB() error {
-	//每次最多插入5000条submission
-	const mx = 5000
-	var err error
-	var submissions []db.CodeforcesSubmission
-	if len(u.DBUser.Submissions) > mx {
-		submissions = u.DBUser.Submissions
-		u.DBUser.Submissions = []db.CodeforcesSubmission{}
-	}
-	if err = db.SaveCodeforcesUser(&u.DBUser); err != nil {
+func (u *CodeforcesUser) saveUser2DB() error {
+	user := u.DBUser
+	user.RatingChanges = nil
+	user.Submissions = nil
+	err := db.SaveCodeforcesUser(&user)
+	if err != nil {
 		return err
 	}
-
-	if submissions != nil {
-		for i := range submissions {
-			submissions[i].CodeforcesUserID = u.DBUser.ID
-		}
-
-		for i := 0; i < len(submissions); i += mx {
-			if err = db.SaveCodeforcesSubmissions(submissions[i:min(len(submissions), i+mx)]); err != nil {
-				return err
-			}
-		}
-	}
+	u.DBUser.ID = user.ID
 	return nil
+}
+
+func (u *CodeforcesUser) saveFetcherSubmissions2DB(submissions []fetcher.CodeforcesSubmission) error {
+	dbSubmissions := make([]db.CodeforcesSubmission, 0, len(submissions))
+	for _, submission := range submissions {
+		dbSubmissions = append(dbSubmissions, db.CodeforcesSubmission{
+			CodeforcesUserID:    u.DBUser.ID,
+			CodeforcesProblemID: submission.Problem.ID(),
+			At:                  time.Unix(submission.At, 0),
+			Status:              submission.Status,
+		})
+	}
+	return db.SaveCodeforcesSubmissions(dbSubmissions)
+}
+
+func (u *CodeforcesUser) saveFetcherRatingChanges2DB(ratingChanges []fetcher.CodeforcesRatingChange) error {
+	dbRatingChanges := make([]db.CodeforcesRatingChange, 0, len(ratingChanges))
+	for _, ratingChange := range ratingChanges {
+		dbRatingChanges = append(dbRatingChanges, db.CodeforcesRatingChange{
+			CodeforcesUserID: u.DBUser.ID,
+			At:               time.Unix(ratingChange.At, 0),
+			NewRating:        ratingChange.NewRating,
+		})
+	}
+	return db.SaveCodeforcesRatingChanges(dbRatingChanges)
 }
 
 func (u *CodeforcesUser) loadFromCache(handle string) (err error) {
@@ -236,10 +214,7 @@ func (u *CodeforcesUser) loadFromCache(handle string) (err error) {
 	if data, err = cache.GetCodeforcesUser(handle); err != nil {
 		return err
 	}
-	if err = json.Unmarshal([]byte(data), &u); err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal([]byte(data), &u)
 }
 
 func (u *CodeforcesUser) saveToCache() (err error) {
@@ -253,10 +228,8 @@ func (u *CodeforcesUser) saveToCache() (err error) {
 	return nil
 }
 
-// cruDB create/read & update data in DB
-func (u *CodeforcesUser) cruDB(handle string) (err error) {
-	const normalSubmissionFetchNum = 500
-	const newUserSubmissionFetchNum = 10000
+// cruDB create/read & update user data in DB
+func (u *CodeforcesUser) cruDBUser(handle string) (err error) {
 	isNewUser := false
 	if err = u.loadFromDB(handle); err != nil {
 		if !db.IsNotFound(err) {
@@ -265,43 +238,43 @@ func (u *CodeforcesUser) cruDB(handle string) (err error) {
 		isNewUser = true
 	}
 
-	userInfo, err := fetcher.FetchCodeforcesUsersInfo([]string{handle}, false)
+	userInfo, err := fetcher.FetchCodeforcesUserInfo(handle, false)
 	if err != nil {
 		return err
 	}
 
-	ratingChanges, err := fetcher.FetchCodeforcesUserRatingChanges(handle)
-	if err != nil {
-		return err
-	}
-
-	fetchNum := normalSubmissionFetchNum
-	if isNewUser {
-		fetchNum = newUserSubmissionFetchNum
-	}
-
-	lastSubmissionInDB := time.Unix(0, 0)
-	if len(u.DBUser.Submissions) > 0 {
-		lastSubmissionInDB = u.DBUser.Submissions[len(u.DBUser.Submissions)-1].At
-	}
-
-	submissions := make([]fetcher.CodeforcesSubmission, 0)
-	count := 1
-	flag := true
-	for flag {
-		correctSubmissions, err := fetcher.FetchCodeforcesUserSubmissions(handle, count, fetchNum)
+	lastRatingChangeAt := time.Unix(0, 0)
+	if !isNewUser {
+		lastRatingChange, err := db.LoadLastCodeforcesRatingChangeByUID(u.DBUser.ID)
 		if err != nil {
 			return err
 		}
-		if len(*correctSubmissions) == 0 {
-			break
+
+		if lastRatingChange != nil {
+			lastRatingChangeAt = lastRatingChange.At
 		}
-		flag = time.Unix((*correctSubmissions)[0].At, 0).Before(lastSubmissionInDB)
-		count += fetchNum
-		submissions = append(submissions, *correctSubmissions...)
 	}
 
-	if err = u.fromFetcherRatingChanges(*ratingChanges); err != nil {
+	ratingChanges, err := fetcher.FetchCodeforcesRatingChangesAfter(handle, lastRatingChangeAt)
+	if err != nil {
+		return err
+	}
+
+	lastSubmitAt := time.Unix(0, 0)
+	if !isNewUser {
+		lastSubmission, err := db.LoadLastCodeforcesSubmissionByUID(u.DBUser.ID)
+		if err != nil {
+			return err
+		}
+
+		if lastSubmission != nil {
+			lastSubmitAt = lastSubmission.At
+		}
+	}
+
+	submissions, err := fetcher.FetchCodeforcesSubmissionsAfter(handle, lastSubmitAt)
+
+	if err = u.fromFetcherRatingChanges(ratingChanges); err != nil {
 		return err
 	}
 
@@ -309,29 +282,22 @@ func (u *CodeforcesUser) cruDB(handle string) (err error) {
 		return err
 	}
 
-	if err = u.fromFetcherUserInfo((*userInfo)[0]); err != nil {
+	if err = u.fromFetcherUserInfo(userInfo); err != nil {
 		return err
 	}
 
-	if isNewUser {
-		solved := make(map[string]byte)
-		for _, submission := range submissions {
-			if submission.Status == string(db.CodeforcesSubmissionStatusOk) {
-				solved[submission.Problem.ID()] = 1
-			}
-		}
-		u.DBUser.Solved = len(solved)
-	} else {
-		solved, err := db.CountCodeforcesSolvedByUID(u.DBUser.ID)
-		if err != nil {
-			return err
-		}
-		u.DBUser.Solved = solved
-	}
-
-	if err = u.saveToDB(); err != nil {
+	if err = u.saveUser2DB(); err != nil {
 		return err
 	}
+
+	if err = u.saveFetcherRatingChanges2DB(ratingChanges); err != nil {
+		return err
+	}
+
+	if err = u.saveFetcherSubmissions2DB(submissions); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -366,7 +332,7 @@ func (u *CodeforcesUser) process() (err error) {
 	})
 	// ---------------------------------------------------------------------- //
 
-	// 从rating changes中读取maxRating和Rating
+	// 从rating changes中读取maxRating和Rating, 因为有些人的这两个数据在user.info不公开，但是可以通过user.rating拿到
 	// ---------------------------------------------------------------------- //
 	if (u.DBUser.Rating == 0 || u.DBUser.MaxRating == 0) && len(u.DBUser.RatingChanges) > 0 {
 		u.DBUser.Rating = u.DBUser.RatingChanges[len(u.DBUser.RatingChanges)-1].NewRating
@@ -375,6 +341,11 @@ func (u *CodeforcesUser) process() (err error) {
 		}
 	}
 	// ---------------------------------------------------------------------- //
+
+	u.SolvedCount, err = db.CountCodeforcesSolvedByUID(u.DBUser.ID)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -395,7 +366,7 @@ func GetUpdatedCodeforcesUser(handle string) (user *CodeforcesUser, err error) {
 		return user, nil
 	}
 
-	if err = user.cruDB(handle); err != nil {
+	if err = user.cruDBUser(handle); err != nil {
 		return nil, err
 	}
 

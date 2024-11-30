@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"gorm.io/gorm"
 	"time"
 )
@@ -36,7 +37,6 @@ type CodeforcesUser struct {
 	Rating      int
 	MaxRating   int
 	FriendCount int
-	Solved      int
 
 	Submissions   []CodeforcesSubmission
 	RatingChanges []CodeforcesRatingChange
@@ -72,7 +72,7 @@ type CodeforcesRatingChange struct {
 }
 
 func MigrateCodeforces() error {
-	return GetDBConnection().AutoMigrate(
+	return db.AutoMigrate(
 		&CodeforcesUser{},
 		&CodeforcesProblem{},
 		&CodeforcesSubmission{},
@@ -82,7 +82,7 @@ func MigrateCodeforces() error {
 
 func CountCodeforcesSolvedByUID(uid uint) (int, error) {
 	result := 0
-	if err := GetDBConnection().Raw(`
+	if err := db.Raw(`
 		SELECT COUNT(DISTINCT codeforces_problem_id) 
 		FROM codeforces_submissions 
 		WHERE codeforces_user_id = ? AND status = ?`,
@@ -94,9 +94,7 @@ func CountCodeforcesSolvedByUID(uid uint) (int, error) {
 
 func LoadCodeforcesUserByHandle(handle string) (*CodeforcesUser, error) {
 	result := &CodeforcesUser{}
-	if err := GetDBConnection().
-		Preload("Submissions", func(db *gorm.DB) *gorm.DB { return db.Order("at DESC").Limit(1) }).
-		Preload("RatingChanges").Where("handle = ?", handle).First(result).Error; err != nil {
+	if err := db.Where("handle = ?", handle).First(result).Error; err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -126,14 +124,49 @@ func LoadCodeforcesSolvedProblemByUID(UID uint) ([]CodeforcesProblem, error) {
 	return problems, nil
 }
 
+func LoadLastCodeforcesSubmissionByUID(UID uint) (*CodeforcesSubmission, error) {
+	result := &CodeforcesSubmission{}
+	if err := db.Where("codeforces_user_id = ?", UID).Order("at DESC").First(result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
+func LoadLastCodeforcesRatingChangeByUID(UID uint) (*CodeforcesRatingChange, error) {
+	result := &CodeforcesRatingChange{}
+	if err := db.Where("codeforces_user_id = ?", UID).Order("at DESC").First(result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
 func SaveCodeforcesProblems(problems []CodeforcesProblem) error {
-	return GetDBConnection().Save(&problems).Error
+	return saveLoop[CodeforcesProblem](problems)
 }
 
 func SaveCodeforcesUser(user *CodeforcesUser) error {
-	return GetDBConnection().Save(user).Error
+	return db.Save(user).Error
 }
 
-func SaveCodeforcesSubmissions(submission []CodeforcesSubmission) error {
-	return GetDBConnection().Save(submission).Error
+func SaveCodeforcesSubmissions(submissions []CodeforcesSubmission) error {
+	return saveLoop[CodeforcesSubmission](submissions)
+}
+
+func SaveCodeforcesRatingChanges(changes []CodeforcesRatingChange) error {
+	return saveLoop[CodeforcesRatingChange](changes)
+}
+
+func saveLoop[T any](data []T) error {
+	for i := 0; i < len(data); i += signalInsertLimit {
+		if err := db.Save(data[i:min(len(data), i+signalInsertLimit)]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }

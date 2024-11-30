@@ -133,8 +133,8 @@ func FetchCodeforcesRaces() ([]Race, error) {
 	if err != nil {
 		return nil, err
 	}
-	result := make([]Race, 0, len(*races))
-	for _, race := range *races {
+	result := make([]Race, 0, len(races))
+	for _, race := range races {
 		if race.RelativeTimeSeconds > 0 {
 			break
 		}
