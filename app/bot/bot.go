@@ -159,11 +159,11 @@ func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
 func bindCodeforcesIDHandler(ctx *zero.Ctx) {
 	codeforcesID := strings.Split(ctx.MessageString(), " ")[1:]
 	if len(codeforcesID) > 1 {
-		ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " +
+		ctx.Send(message.At(ctx.Event.UserID).String() +
 			"一个QQ号只能绑定一个codeforces账号哦")
 		return
 	} else if len(codeforcesID) == 0 {
-		ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " +
+		ctx.Send(message.At(ctx.Event.UserID).String() +
 			"没听到你要绑定到哪个账号呢，请再说一遍吧")
 		return
 	}
@@ -175,10 +175,10 @@ func bindCodeforcesIDHandler(ctx *zero.Ctx) {
 	}
 	err := manager.BindQQAndCodeforcesHandler(qqBind)
 	if err != nil {
-		ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " + err.Error())
+		ctx.Send(message.At(ctx.Event.UserID).String() + err.Error())
 		return
 	}
-	ctx.Send("[CQ:at,qq=" + fmt.Sprint(ctx.Event.UserID) + "] " +
+	ctx.Send(message.At(ctx.Event.UserID).String() +
 		"成功绑定 " + ctx.Event.Sender.NickName + " -> " + codeforcesID[0])
 }
 

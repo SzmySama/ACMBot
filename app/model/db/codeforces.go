@@ -170,3 +170,11 @@ func saveLoop[T any](data []T) error {
 	}
 	return nil
 }
+
+func GetCodeforcesUserID(handle string) (uint, error) {
+	var user CodeforcesUser
+	if err := db.Model(&CodeforcesUser{}).Where("handle = ?", handle).Select("id").First(&user).Error; err != nil {
+		return 0, err
+	}
+	return user.ID, nil
+}
