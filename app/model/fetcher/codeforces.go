@@ -30,7 +30,7 @@ func init() {
 
 type CodeforcesUser struct {
 	Handle      string `json:"handle"`
-	Avatar      string `json:"avatar"`
+	Avatar      string `json:"titlePhoto"`
 	Rating      uint   `json:"rating"`
 	Solved      uint
 	FriendCount uint      `json:"friendOfCount"`
