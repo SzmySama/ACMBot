@@ -347,6 +347,11 @@ func (u *CodeforcesUser) process() (err error) {
 		return err
 	}
 
+	u.DBUser.RatingChanges, err = db.LoadCodeforcesRatingChangesByUID(u.DBUser.ID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

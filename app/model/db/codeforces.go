@@ -146,6 +146,17 @@ func LoadLastCodeforcesRatingChangeByUID(UID uint) (*CodeforcesRatingChange, err
 	return result, nil
 }
 
+func LoadCodeforcesRatingChangesByUID(UID uint) ([]CodeforcesRatingChange, error) {
+	result := make([]CodeforcesRatingChange, 0)
+	if err := db.Where("codeforces_user_id = ?", UID).Find(&result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return result, nil
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
 func SaveCodeforcesProblems(problems []CodeforcesProblem) error {
 	return saveLoop[CodeforcesProblem](problems)
 }
