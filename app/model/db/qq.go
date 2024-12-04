@@ -20,6 +20,17 @@ type QQGroup struct {
 	QID     uint
 }
 
+type QQUser struct {
+	QID              uint
+	CodeforcesRating uint
+	QName            string
+}
+
+type QQGroupRank struct {
+	GroupID uint
+	QQUsers []*QQUser
+}
+
 func MigrateQQ() error {
 	return db.AutoMigrate(&QQBind{}, &QQGroup{})
 }
@@ -43,19 +54,19 @@ func BindQQToCodeforces(qqBind QQBind, group QQGroup) error {
 		if IDUsed.QID != qqBind.QID {
 			return errs.ErrHandleHasBindByOthers
 		}
-		return nil
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
-	}
-	if err := db.Where(`q_id = ?`, qqBind.QID).First(&IDUsed).Error; err == nil {
-		if err = db.Model(&QQBind{}).Where("q_id = ?", qqBind.QID).Updates(qqBind).Error; err != nil {
+	} else {
+		if err = db.Where(`q_id = ?`, qqBind.QID).First(&IDUsed).Error; err == nil {
+			if err = db.Model(&QQBind{}).Where("q_id = ?", qqBind.QID).Updates(qqBind).Error; err != nil {
+				return err
+			}
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
-	}
-	if err := db.Create(&qqBind).Error; err != nil {
-		return err
+		if err = db.Create(&qqBind).Error; err != nil {
+			return err
+		}
 	}
 	var existGroup QQGroup
 	if err := db.Where(`group_id = ? and q_id = ?`, group.GroupID, group.QID).First(&existGroup).Error; err == nil {
@@ -65,4 +76,43 @@ func BindQQToCodeforces(qqBind QQBind, group QQGroup) error {
 		return err
 	}
 	return nil
+}
+
+func CheckBind(QID uint) (bool, error) {
+	if err := db.Where("q_id = ?", QID).First(&QQBind{}).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		} else {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
+func GetQQGroupRank(QQGroupNumber uint) (*QQGroupRank, error) {
+	var QIDs []uint
+	if err := db.Model(&QQGroup{}).Where("group_id = ?", QQGroupNumber).Pluck("q_id", &QIDs).Error; err != nil {
+		return nil, err
+	}
+	var qqGroupRank = QQGroupRank{
+		GroupID: QQGroupNumber,
+		QQUsers: make([]*QQUser, 0),
+	}
+	for _, QID := range QIDs {
+		var qqBind QQBind
+		if err := db.Where("q_id = ?", QID).First(&qqBind).Error; err != nil {
+			return nil, err
+		}
+		var cfRating uint
+		if err := db.Model(&CodeforcesUser{}).Select("rating").Where("id = ?", qqBind.CodeforcesUserID).First(&cfRating).Error; err != nil {
+			return nil, err
+		}
+		var qqUser = QQUser{
+			QID:              QID,
+			QName:            qqBind.QName,
+			CodeforcesRating: cfRating,
+		}
+		qqGroupRank.QQUsers = append(qqGroupRank.QQUsers, &qqUser)
+	}
+	return &qqGroupRank, nil
 }
