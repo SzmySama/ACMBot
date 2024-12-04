@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app/model/manager"
+	log "github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/YourSuzumiya/ACMBot/app/utils/config"
@@ -45,6 +46,8 @@ func Start() {
 	zero.OnCommand("cf").Handle(codeforcesUserProfileV2Handler)
 
 	zero.OnCommand("bind").Handle(bindCodeforcesIDHandler)
+	zero.OnCommand("rank").Handle(QQGroupRankHandler)
+
 	zero.OnCommand("菜单").Handle(menuHandler)
 	zero.OnCommand("help").Handle(menuHandler)
 
@@ -180,6 +183,24 @@ func bindCodeforcesIDHandler(ctx *zero.Ctx) {
 	}
 	ctx.Send(message.At(ctx.Event.UserID).String() +
 		"成功绑定 " + ctx.Event.Sender.NickName + " -> " + codeforcesID[0])
+}
+
+func QQGroupRankHandler(ctx *zero.Ctx) {
+	var QQGroup = manager.QQGroup{
+		QQGroupName: ctx.GetGroupInfo(ctx.Event.GroupID, false).Name,
+		QQGroupID:   uint(ctx.Event.GroupID),
+	}
+	rank, err := manager.GetGroupRank(QQGroup)
+	if err != nil {
+		log.Errorf("get rank err %v", err)
+		return
+	}
+	msg := QQGroup.QQGroupName + "\n"
+	for _, user := range rank.QQUsers {
+		msg += "#" + fmt.Sprintf("%d", user.RankInGroup) + " " +
+			user.QName + " " + fmt.Sprintf("%d", user.CodeforcesRating) + "\n"
+	}
+	ctx.Send(msg)
 }
 
 func allRaceHandler(ctx *zero.Ctx) {

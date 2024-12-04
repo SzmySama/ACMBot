@@ -18,6 +18,7 @@ var (
 	codeforcesUserProfileV1Template *template.Template
 	codeforcesUserProfileV2Template *template.Template
 	codeforcesRatingChangeTemplate  *template.Template
+	qqGroupRankTemplate             *template.Template
 )
 
 type Error struct {
@@ -33,6 +34,7 @@ const (
 	CodeforcesUserProfileV1TemplatePath = templatePath + "codeforces_profile_v1.html"
 	CodeforcesUserProfileV2TemplatePath = templatePath + "codeforces_profile_v2.html"
 	CodeforcesRatingChangesTemplatePath = templatePath + "codeforces_rating_change.html"
+	QQGroupRankTemplatePath             = templatePath + "qq_group_rank.html"
 )
 
 type HtmlOptions struct {
@@ -77,6 +79,7 @@ func initTemplates() {
 		&codeforcesUserProfileV1Template: CodeforcesUserProfileV1TemplatePath,
 		&codeforcesUserProfileV2Template: CodeforcesUserProfileV2TemplatePath,
 		&codeforcesRatingChangeTemplate:  CodeforcesRatingChangesTemplatePath,
+		&qqGroupRankTemplate:             QQGroupRankTemplatePath,
 	}
 
 	for k, v := range templateMap {
