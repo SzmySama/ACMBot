@@ -172,8 +172,8 @@ func bindCodeforcesIDHandler(ctx *zero.Ctx) {
 	}
 	var qqBind = manager.QQBind{
 		CodeforcesHandle: codeforcesID[0],
-		QID:              uint(ctx.Event.UserID),
-		QQGroupID:        uint(ctx.Event.GroupID),
+		QID:              uint64(ctx.Event.UserID),
+		QQGroupID:        uint64(ctx.Event.GroupID),
 		QQName:           ctx.NickName(),
 	}
 	err := manager.BindQQAndCodeforcesHandler(qqBind)
@@ -188,7 +188,7 @@ func bindCodeforcesIDHandler(ctx *zero.Ctx) {
 func QQGroupRankHandler(ctx *zero.Ctx) {
 	var QQGroup = manager.QQGroup{
 		QQGroupName: ctx.GetGroupInfo(ctx.Event.GroupID, false).Name,
-		QQGroupID:   uint(ctx.Event.GroupID),
+		QQGroupID:   uint64(ctx.Event.GroupID),
 	}
 	rank, err := manager.GetGroupRank(QQGroup)
 	if err != nil {

@@ -9,25 +9,25 @@ import (
 
 type QQBind struct {
 	gorm.Model
-	QID              uint `gorm:"uniqueIndex"`
-	CodeforcesUserID uint `gorm:"uniqueIndex"`
+	QID              uint64 `gorm:"uniqueIndex"`
+	CodeforcesUserID uint   `gorm:"uniqueIndex"`
 	QName            string
 }
 
 type QQGroup struct {
 	gorm.Model
-	GroupID uint `gorm:"index"`
-	QID     uint
+	GroupID uint64 `gorm:"index"`
+	QID     uint64
 }
 
 type QQUser struct {
-	QID              uint
+	QID              uint64
 	CodeforcesRating uint
 	QName            string
 }
 
 type QQGroupRank struct {
-	GroupID uint
+	GroupID uint64
 	QQUsers []*QQUser
 }
 
@@ -89,8 +89,8 @@ func CheckBind(QID uint) (bool, error) {
 	return true, nil
 }
 
-func GetQQGroupRank(QQGroupNumber uint) (*QQGroupRank, error) {
-	var QIDs []uint
+func GetQQGroupRank(QQGroupNumber uint64) (*QQGroupRank, error) {
+	var QIDs []uint64
 	if err := db.Model(&QQGroup{}).Where("group_id = ?", QQGroupNumber).Pluck("q_id", &QIDs).Error; err != nil {
 		return nil, err
 	}

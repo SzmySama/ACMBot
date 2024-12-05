@@ -12,15 +12,15 @@ import (
 )
 
 type QQBind struct {
-	QQGroupID        uint
+	QQGroupID        uint64
 	QQName           string
-	QID              uint
+	QID              uint64
 	CodeforcesHandle string
 }
 
 type QQGroup struct {
 	QQGroupName string
-	QQGroupID   uint
+	QQGroupID   uint64
 }
 
 func BindQQAndCodeforcesHandler(qqBind QQBind) error {
