@@ -15,23 +15,14 @@
         }
 
         body::before {
-            content: '© 2024 YourSuzumiya. No rights reserved.';
+            content: '© 2024 ACMBot. No rights reserved.';
             position: absolute;
-            left: 0;
-            top: 250px;
-            width: 500px;
-            text-align: center;
+            bottom: 0;
+            right: 0;
             font-size: 16px;
             color: rgba(0, 0, 0, 0.2);
-            transform: rotate(-30deg);
             pointer-events: none;
             z-index: 9999;
-        }
-
-        .content {
-            position: relative;
-            z-index: 1;
-            padding: 20px;
         }
     </style>
 </head>
@@ -65,10 +56,16 @@
         const today = new Date()
         const today_str = today.getFullYear() + '-' +
             String(today.getMonth() + 1).padStart(2, '0') + '-' +
-            String(today.getDate()).padStart(2, '0')
+            String(today.getDate()).padStart(2, '0');
 
         option = {
             animation: false,
+            grid: {
+                left: '8%',  // 图表左边距，可以是像素值（如 '100'）或者百分比（如 '10%'）
+                right: '5%', // 图表右边距
+                top: '10%',   // 图表上边距
+                bottom: '10%' // 图表下边距
+            },
             title: {
                 text: '{{.Handle}}',
                 subtext: today_str,
@@ -79,12 +76,12 @@
                 axisLabel: {
                     formatter: function (value) {
                         const date = new Date(value);
-                        const year = date.getFullYear();
+                        const year = date.getFullYear().toString().substring(2, 4);
                         const month = (date.getMonth() + 1).toString().padStart(2, '0');
                         const day = date.getDate().toString().padStart(2, '0');
                         return `${year}-${month}-${day}`;
                     },
-                    rotate: 45,
+                    rotate: 0,
                 },
                 min: function (value) {
                     return new Date(value.min - (value.max - value.min) * 0.05);
@@ -116,11 +113,14 @@
                 data: rating_change_data,
                 type: 'line',
                 smooth: true,
+                itemStyle: {
+                    color: '#5470C6', // 设置数据点的颜色，这里使用深灰色
+                },
                 label: {
                     show: true,
                     position: 'top',
                     formatter: function (params) {
-                        if (params.data[1] >= view_rating || params.data[0] == last_rating_change) {
+                        if (params.data[1] >= view_rating || params.data[0] === last_rating_change) {
                             return params.data[1]
                         }
                         return ""
@@ -129,17 +129,33 @@
                 markArea: {
                     silent: true,
                     data: [
-                        [{ yAxis: 0 }, { yAxis: 1200, itemStyle: { color: '#b0bec5' } }],
-                        [{ yAxis: 1200 }, { yAxis: 1400, itemStyle: { color: '#a5d6a7' } }],
-                        [{ yAxis: 1400 }, { yAxis: 1600, itemStyle: { color: '#80cbc4' } }],
-                        [{ yAxis: 1600 }, { yAxis: 1900, itemStyle: { color: '#81d4fa' } }],
-                        [{ yAxis: 1900 }, { yAxis: 2100, itemStyle: { color: '#e1bee7' } }],
-                        [{ yAxis: 2100 }, { yAxis: 2300, itemStyle: { color: '#ffcc80' } }],
-                        [{ yAxis: 2300 }, { yAxis: 2400, itemStyle: { color: '#ffb74d' } }],
-                        [{ yAxis: 2400 }, { yAxis: 2600, itemStyle: { color: '#ff6666' } }],
-                        [{ yAxis: 2600 }, { yAxis: 3000, itemStyle: { color: '#ff0000' } }],
-                        [{ yAxis: 3000 }, { yAxis: 4000, itemStyle: { color: '#cc0000' } }],
-                        [{ yAxis: 4000 }, { yAxis: 9999, itemStyle: { color: '#990000' } }],
+                        [{ yAxis: 0 }, { yAxis: 1200, itemStyle: { color: '#CCCCCC' } }],
+                        [{ yAxis: 1200 }, { yAxis: 1400, itemStyle: { color: '#77FF77' } }],
+                        [{ yAxis: 1400 }, { yAxis: 1600, itemStyle: { color: '#77DDBB' } }],
+                        [{ yAxis: 1600 }, { yAxis: 1900, itemStyle: { color: '#AAAAFF' } }],
+                        [{ yAxis: 1900 }, { yAxis: 2100, itemStyle: { color: '#FF88FF' } }],
+                        [{ yAxis: 2100 }, { yAxis: 2300, itemStyle: { color: '#FFCC88' } }],
+                        [{ yAxis: 2300 }, { yAxis: 2400, itemStyle: { color: '#FFBB55' } }],
+                        [{ yAxis: 2400 }, { yAxis: 2600, itemStyle: { color: '#FF7777' } }],
+                        [{ yAxis: 2600 }, { yAxis: 3000, itemStyle: { color: '#FF3333' } }],
+                        [{ yAxis: 3000 }, { yAxis: 4000, itemStyle: { color: '#AA0000' } }],
+                        [{ yAxis: 4000 }, { yAxis: 9999, itemStyle: { color: {
+                                    type: 'linear',
+                                    x: 0,
+                                    y: 0,
+                                    x2: 1,
+                                    y2: 1/4,
+                                    colorStops: [
+                                        {offset: 0, color: '#FF0000'},
+                                        {offset: 1 / 6, color: '#FFA500'},
+                                        {offset: 2 / 6, color: '#FFFF00'},
+                                        {offset: 3 / 6, color: '#00FF00'},
+                                        {offset: 4 / 6, color: '#0000FF'},
+                                        {offset: 5 / 6, color: '#4B0082'},
+                                        {offset: 1, color: '#9400D3'}
+                                    ],
+                                    global: false
+                                } } }],
                     ]
                 },
                 markLine: {
@@ -163,14 +179,13 @@
 
                     ],
                     lineStyle: {
-                        color: 'black',
+                        color: 'gray',
                         type: 'dashed'
                     }
                 }
             }]
         };
         option && myChart.setOption(option);
-
     });
 </script>
 </body>
