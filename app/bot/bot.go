@@ -37,8 +37,11 @@ func init() {
 
 func Start() {
 	zero.OnCommand("近期比赛").Handle(allRaceHandler)
-
 	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
+	zero.OnCommand("近期atc").Handle(atcoderRaceHandler)
+	zero.OnCommand("近期nk").Handle(nowcoderRaceHandler)
+	zero.OnCommand("近期lg").Handle(luoguRaceHandler)
+
 	zero.OnCommand("rating").Handle(codeforcesRatingChangeHandler)
 	zero.OnCommand("rt").Handle(codeforcesRatingChangeHandler)
 
@@ -163,6 +166,30 @@ func allRaceHandler(ctx *zero.Ctx) {
 	ctx.Send(race)
 }
 
+func atcoderRaceHandler(ctx *zero.Ctx) {
+	race, err := manager.GetAtCoderRaces().ToQQMixForwardMessage()
+	if err != nil {
+		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
+	}
+	ctx.Send(race)
+}
+
+func nowcoderRaceHandler(ctx *zero.Ctx) {
+	race, err := manager.GetNowCoderRaces().ToQQMixForwardMessage()
+	if err != nil {
+		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
+	}
+	ctx.Send(race)
+}
+
+func luoguRaceHandler(ctx *zero.Ctx) {
+	race, err := manager.GetLuoguRaces().ToQQMixForwardMessage()
+	if err != nil {
+		ctx.Send(err.Error())
+	}
+	ctx.Send(race)
+}
+
 func codeforcesRaceHandler(ctx *zero.Ctx) {
 	race, err := manager.GetCodeforcesRaces().ToQQMixForwardMessage()
 	if err != nil {
@@ -178,6 +205,9 @@ func menuHandler(ctx *zero.Ctx) {
 		"2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线\n"+
 		"3.近期比赛，用于查询近期的比赛数据，数据来源于sdutacm.cn\n"+
 		"4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com\n"+
+		"5.近期atc，用于查询近期的atcoder数据，数据来源sdutacm.com\n"+
+		"6.近期nk，用于查询近期的牛客数据，数据来源sdutacm.com\n"+
+		"7.近期lg，用于查询近期的洛谷数据，数据来源sdutacm.com\n"+
 		"项目地址https://github.com/YourSuzumiya/ACMBot，喜欢可以加个Star支持一下\n"+
 		"Bot可以直接拉到自己群里用哦",
 		CommandPrefix,

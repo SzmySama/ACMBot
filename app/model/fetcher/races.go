@@ -150,3 +150,48 @@ func FetchCodeforcesRaces() ([]Race, error) {
 	slices.Reverse(result)
 	return result, nil
 }
+
+func FetchAtCoderRaces() ([]Race, error) {
+	race, err := FetchStuACMRaces()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]Race, 0, len(race))
+	for _, race := range race {
+		if race.Source == "AtCoder" {
+			result = append(result, race)
+		}
+	}
+	slices.Reverse(result)
+	return result, nil
+}
+
+func FetchNowCoderRaces() ([]Race, error) {
+	race, err := FetchStuACMRaces()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]Race, 0, len(race))
+	for _, race := range race {
+		if race.Source == "牛客竞赛" {
+			result = append(result, race)
+		}
+	}
+	slices.Reverse(result)
+	return result, nil
+}
+
+func FetchLuoguRaces() ([]Race, error) {
+	race, err := FetchStuACMRaces()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]Race, 0, len(race))
+	for _, race := range race {
+		if race.Source == "洛谷" {
+			result = append(result, race)
+		}
+	}
+	slices.Reverse(result)
+	return result, nil
+}
