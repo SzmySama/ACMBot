@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"strings"
 	"time"
 )
 
@@ -10,7 +11,7 @@ var (
 )
 
 func keyCodeforcesUser(handle string) string {
-	return "codeforces_user:" + handle
+	return "codeforces_user:" + strings.ToLower(handle)
 }
 
 func GetCodeforcesUser(handle string) (string, error) {
