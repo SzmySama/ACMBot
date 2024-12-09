@@ -5,7 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/YourSuzumiya/ACMBot/app/model/errs"
+	"github.com/YourSuzumiya/ACMBot/app"
+	"github.com/YourSuzumiya/ACMBot/app/errs"
 	"io"
 	"net/http"
 	"sort"
@@ -16,16 +17,15 @@ import (
 
 	"math/rand"
 
-	"github.com/YourSuzumiya/ACMBot/app/utils/config"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
-	cfg *config.CodeforcesConfigStruct
+	cfg *app.CodeforcesConfigStruct
 )
 
 func init() {
-	cfg = &config.GetConfig().Codeforces
+	cfg = &app.GetConfig().Codeforces
 }
 
 type CodeforcesUser struct {

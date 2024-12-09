@@ -2,214 +2,100 @@ package bot
 
 import (
 	"fmt"
-	"github.com/YourSuzumiya/ACMBot/app/model/manager"
-	"strings"
-
-	"github.com/YourSuzumiya/ACMBot/app/utils/config"
-
-	zero "github.com/wdvxdr1123/ZeroBot"
-	"github.com/wdvxdr1123/ZeroBot/driver"
-	"github.com/wdvxdr1123/ZeroBot/message"
+	"github.com/YourSuzumiya/ACMBot/app/manager"
+	"github.com/YourSuzumiya/ACMBot/app/model"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	QueryLimit    = 3
 	CommandPrefix = "#"
+
+	menuText = `以下是功能菜单：所有命令都要加上前缀` + CommandPrefix + `🥰
+1.cf [username]，用于查询codeforces用户的基本信息
+2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线
+3.近期比赛，用于查询近期的比赛数据，数据来源于sdutacm.cn
+4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com
+5.近期atc，用于查询近期的atcoder数据，数据来源sdutacm.com
+6.近期nk，用于查询近期的牛客数据，数据来源sdutacm.com
+7.近期lg，用于查询近期的洛谷数据，数据来源sdutacm.com
+项目地址https://github.com/YourSuzumiya/ACMBot，喜欢可以加个Star支持一下
+Bot可以直接拉到自己群里用哦`
 )
 
 var (
-	Cfg     = config.GetConfig().Bot
-	zeroCfg = zero.Config{
-		NickName:      Cfg.NickName,
-		CommandPrefix: Cfg.CommandPrefix,
-		SuperUsers:    Cfg.SuperUsers,
-		Driver:        []zero.Driver{},
+	CommandMap = map[string]Handler{
+		"test": testHandler,
+
+		"近期比赛":  raceHandler(manager.GetStuACMRaces, "获取近期比赛"),
+		"近期cf":  raceHandler(manager.GetCodeforcesRaces, "获取近期cf"),
+		"近期atc": raceHandler(manager.GetAtCoderRaces, "获取近期atc"),
+		"近期nk":  raceHandler(manager.GetNowCoderRaces, "获取近期nk"),
+		"近期lg":  raceHandler(manager.GetLuoguRaces, "获取近期lg"),
+
+		"cf": codeforcesProfileHandler(),
+		"rt": codeforcesRatingChangeHandler(),
+
+		"menu": func(ctx Context) {
+			ctx.Send(Message{menuText})
+		},
 	}
 )
 
-func init() {
-	for _, cfg := range Cfg.WS {
-		zeroCfg.Driver = append(zeroCfg.Driver, driver.NewWebSocketClient(
-			fmt.Sprintf("ws://%s:%d", cfg.Host, cfg.Port),
-			cfg.Token))
-	}
+func testHandler(ctx Context) {
+	logrus.Info(ctx.Params())
 }
 
-func Start() {
-	zero.OnCommand("近期比赛").Handle(allRaceHandler)
-	zero.OnCommand("近期cf").Handle(codeforcesRaceHandler)
-	zero.OnCommand("近期atc").Handle(atcoderRaceHandler)
-	zero.OnCommand("近期nk").Handle(nowcoderRaceHandler)
-	zero.OnCommand("近期lg").Handle(luoguRaceHandler)
-
-	zero.OnCommand("rating").Handle(codeforcesRatingChangeHandler)
-	zero.OnCommand("rt").Handle(codeforcesRatingChangeHandler)
-
-	zero.OnCommand("cf").Handle(codeforcesUserProfileV2Handler)
-
-	zero.OnCommand("菜单").Handle(menuHandler)
-	zero.OnCommand("help").Handle(menuHandler)
-
-	go manager.RaceUpdater()
-
-	zero.RunAndBlock(&zeroCfg, nil)
-}
-
-func processCodeforcesUserProfile(handle string, ctx *zero.Ctx) {
-	user, err := manager.GetUpdatedCodeforcesUser(handle)
-	if err != nil {
-		ctx.Send(err.Error())
-		return
-	}
-	image, err := user.ToRenderProfileV1().ToImage()
-	if err != nil {
-		ctx.Send(err.Error())
-	}
-	ctx.Send([]message.MessageSegment{message.ImageBytes(image)})
-}
-
-func codeforcesUserProfileHandler(ctx *zero.Ctx) {
-	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	if len(handles) == 0 {
-		ctx.Send("没听到你要查谁呢，再说一遍吧？")
-		return
-	}
-
-	count := 1
-	for _, i := range handles {
-		if i == "" {
-			continue
+func handlerTemplate[T any](provider func() (T, error), msgGenerator func(T) Message, hint string) Handler {
+	return func(ctx Context) {
+		result, err := provider()
+		if err != nil {
+			e := fmt.Errorf("萝卜子在`%s`时遇到了困难: %w", hint, err)
+			ctx.SendError(e)
 		}
-		if count > QueryLimit {
-			ctx.Send("参数太多了🥰，后面的就不查了哦")
+		ctx.Send(msgGenerator(result))
+	}
+}
+
+// 处理图片消息
+func picHandler(provider model.PicProvider, hint string) Handler {
+	return handlerTemplate[[]byte](provider, func(picBytes []byte) Message { return Message{picBytes} }, hint)
+}
+
+func raceHandler(provider model.RaceProvider, hint string) Handler {
+	return handlerTemplate[[]model.Race](provider, func(races []model.Race) Message {
+		var msg Message
+		for _, race := range races {
+			msg = append(msg, race.String())
+		}
+		return msg
+	}, hint)
+}
+
+func codeforcesUserHandlerTemplate(processor func(user *manager.CodeforcesUser) model.PicProvider, hint string) Handler {
+	return func(ctx Context) {
+		params := ctx.Params()
+		if len(params) != 1 {
+			ctx.Send(Message{"萝卜子温馨提醒: 在" + hint + "时一次只能查询一个用户哦，再问我一次吧"})
 			return
 		}
-		count++
-		go processCodeforcesUserProfile(i, ctx)
-	}
-}
-
-func processCodeforcesUserProfileV2(handle string, ctx *zero.Ctx) {
-	user, err := manager.GetUpdatedCodeforcesUser(handle)
-	if err != nil {
-		ctx.Send(err.Error())
-		return
-	}
-	image, err := user.ToRenderProfileV2().ToImage()
-	if err != nil {
-		ctx.Send(err.Error())
-	}
-	ctx.Send([]message.MessageSegment{message.ImageBytes(image)})
-}
-
-func codeforcesUserProfileV2Handler(ctx *zero.Ctx) {
-	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	if len(handles) == 0 {
-		ctx.Send("没听到你要查谁呢，再说一遍吧？")
-		return
-	}
-
-	count := 1
-	for _, i := range handles {
-		if i == "" {
-			continue
-		}
-		if count > QueryLimit {
-			ctx.Send("参数太多了🥰，后面的就不查了哦")
+		handle, ok := params[0].(string)
+		if !ok {
+			ctx.Send(Message{"(吓)你发了什么给萝卜子？？"})
 			return
 		}
-		count++
-		go processCodeforcesUserProfileV2(i, ctx)
-	}
-}
-
-func processCodeforcesRatingChange(handle string, ctx *zero.Ctx) {
-	user, err := manager.GetUpdatedCodeforcesUser(handle)
-	if err != nil {
-		ctx.Send(err.Error())
-		return
-	}
-	image, err := user.ToRenderRatingChanges().ToImage()
-	if err != nil {
-		ctx.Send(err.Error())
-		return
-	}
-	ctx.Send([]message.MessageSegment{message.ImageBytes(image)})
-}
-
-func codeforcesRatingChangeHandler(ctx *zero.Ctx) {
-	handles := strings.Split(ctx.MessageString(), " ")[1:]
-	if len(handles) == 0 {
-		ctx.Send("没听到你要查谁呢，再说一遍吧？")
-		return
-	}
-
-	count := 1
-	for _, i := range handles {
-		if i == "" {
-			continue
+		user, err := manager.GetUpdatedCodeforcesUser(handle)
+		if err != nil {
+			ctx.Send(Message{fmt.Errorf("获取用户信息失败re: %e", err)})
 		}
-		if count > QueryLimit {
-			ctx.Send("参数太多了🥰，后面的就不查了哦")
-			return
-		}
-		count++
-		go processCodeforcesRatingChange(i, ctx)
+		picHandler(processor(user), hint)
 	}
 }
 
-func allRaceHandler(ctx *zero.Ctx) {
-	race, err := manager.GetStuACMRaces().ToQQMixForwardMessage()
-	if err != nil {
-		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
-	}
-	ctx.Send(race)
+func codeforcesProfileHandler() Handler {
+	return codeforcesUserHandlerTemplate(func(user *manager.CodeforcesUser) model.PicProvider { return user.ToRenderProfileV2().ToImage }, "查询user profile")
 }
 
-func atcoderRaceHandler(ctx *zero.Ctx) {
-	race, err := manager.GetAtCoderRaces().ToQQMixForwardMessage()
-	if err != nil {
-		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
-	}
-	ctx.Send(race)
-}
-
-func nowcoderRaceHandler(ctx *zero.Ctx) {
-	race, err := manager.GetNowCoderRaces().ToQQMixForwardMessage()
-	if err != nil {
-		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
-	}
-	ctx.Send(race)
-}
-
-func luoguRaceHandler(ctx *zero.Ctx) {
-	race, err := manager.GetLuoguRaces().ToQQMixForwardMessage()
-	if err != nil {
-		ctx.Send(err.Error())
-	}
-	ctx.Send(race)
-}
-
-func codeforcesRaceHandler(ctx *zero.Ctx) {
-	race, err := manager.GetCodeforcesRaces().ToQQMixForwardMessage()
-	if err != nil {
-		ctx.Send("检查到错误，数据可能并未及时更新: " + err.Error())
-	}
-	ctx.Send(race)
-}
-
-func menuHandler(ctx *zero.Ctx) {
-	ctx.Send(fmt.Sprintf(""+
-		"以下是功能菜单：所有命令都要加上前缀`%s`🥰\n"+
-		"1.cf [username]，用于查询codeforces用户的基本信息\n"+
-		"2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线\n"+
-		"3.近期比赛，用于查询近期的比赛数据，数据来源于sdutacm.cn\n"+
-		"4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com\n"+
-		"5.近期atc，用于查询近期的atcoder数据，数据来源sdutacm.com\n"+
-		"6.近期nk，用于查询近期的牛客数据，数据来源sdutacm.com\n"+
-		"7.近期lg，用于查询近期的洛谷数据，数据来源sdutacm.com\n"+
-		"项目地址https://github.com/YourSuzumiya/ACMBot，喜欢可以加个Star支持一下\n"+
-		"Bot可以直接拉到自己群里用哦",
-		CommandPrefix,
-	))
+func codeforcesRatingChangeHandler() Handler {
+	return codeforcesUserHandlerTemplate(func(user *manager.CodeforcesUser) model.PicProvider { return user.ToRenderRatingChanges().ToImage }, "查询user rating曲线图")
 }

@@ -1,4 +1,4 @@
-package logger
+package app
 
 import (
 	"fmt"
