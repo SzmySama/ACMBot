@@ -88,3 +88,7 @@ func RaceUpdater() {
 		update()
 	}
 }
+
+func init() {
+	go RaceUpdater()
+}

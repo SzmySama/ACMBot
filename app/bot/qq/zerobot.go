@@ -4,14 +4,50 @@ import (
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app"
 	"github.com/YourSuzumiya/ACMBot/app/bot"
-	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
 	"github.com/wdvxdr1123/ZeroBot/message"
+	"strings"
 )
 
 type qqContext struct {
+	bot.Context
 	zCtx *zero.Ctx
+}
+
+type ctxOption func(*qqContext)
+
+func withZeroCtx(zCtx *zero.Ctx) ctxOption {
+	return func(ctx *qqContext) {
+		ctx.zCtx = zCtx
+	}
+}
+
+func newQQContext(opts ...ctxOption) *qqContext {
+	res := &qqContext{
+		Context: bot.Context{
+			ProtoType: bot.ProtoTypeQQ,
+			StepValue: nil,
+		},
+	}
+
+	for _, opt := range opts {
+		opt(res)
+	}
+
+	return res
+}
+
+func (c *qqContext) GetSender() bot.SenderInfo {
+	return bot.SenderInfo{
+		ID:       c.zCtx.Event.UserID,
+		GroupID:  c.zCtx.Event.GroupID,
+		NickName: c.zCtx.Event.Sender.NickName,
+	}
+}
+
+func (c *qqContext) GetContextType() bot.ProtoType {
+	return bot.ProtoTypeQQ
 }
 
 func (c *qqContext) Send(msg bot.Message) {
@@ -26,13 +62,16 @@ func (c *qqContext) SendError(err error) {
 
 func (c *qqContext) Params() bot.Message {
 	argStr := c.zCtx.State["args"].(string)
-	logrus.Infof(argStr)
-	return bot.Message{}
+	var res bot.Message
+	for _, s := range strings.Fields(argStr) {
+		res = append(res, s)
+	}
+	return res
 }
 
 func msgToZeroMsg(msg bot.Message) message.Message {
 	if len(msg) == 0 {
-		return message.Message{message.Text("刚才好像有人叫我来着...可是萝卜子已经忘记自己要说什么了")}
+		return message.Message{}
 	}
 
 	if len(msg) == 1 {
@@ -66,11 +105,12 @@ var (
 	zeroCfg zero.Config
 )
 
+// TODO: 把配置转移到bot层级
 func init() {
 	cfg := app.GetConfig().Bot
 	zeroCfg = zero.Config{
 		NickName:      cfg.NickName,
-		CommandPrefix: cfg.CommandPrefix,
+		CommandPrefix: bot.CommandPrefix,
 		SuperUsers:    cfg.SuperUsers,
 		Driver:        []zero.Driver{},
 	}
@@ -81,9 +121,19 @@ func init() {
 			cfg.Token))
 	}
 
-	for command, handler := range bot.CommandMap {
+	for command, task := range bot.CommandMap {
 		zero.OnCommand(command).Handle(func(ctx *zero.Ctx) {
-			handler(&qqContext{zCtx: ctx})
+			qCtx := newQQContext(withZeroCtx(ctx))
+			c := &bot.Context{
+				Invoker:   qCtx,
+				ProtoType: qCtx.ProtoType,
+			}
+			err := task(c)
+			if err != nil {
+				qCtx.SendError(err)
+			}
 		})
 	}
+
+	zero.Run(&zeroCfg)
 }

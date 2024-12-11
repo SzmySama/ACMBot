@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/YourSuzumiya/ACMBot/app/helper"
 	"time"
 )
 
@@ -40,7 +41,7 @@ func (r *Race) String() string {
 				"传送门🌈: %s",
 			r.Source,
 			r.Name,
-			fmt.Sprintf("%02d天%02d小时%02d分钟", int(startLeftTime.Hours())/24, abs(int(startLeftTime.Hours()))%24, abs(int(startLeftTime.Minutes()))%60),
+			fmt.Sprintf("%02d天%02d小时%02d分钟", int(startLeftTime.Hours())/24, helper.Abs(int(startLeftTime.Hours()))%24, helper.Abs(int(startLeftTime.Minutes()))%60),
 			r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
 			dStr,
 			r.Link,
@@ -58,7 +59,7 @@ func (r *Race) String() string {
 				"传送门🌈: %s",
 			r.Source,
 			r.Name,
-			fmt.Sprintf("%02d天%02d小时%02d分钟", int(endLeftTime.Hours())/24, abs(int(endLeftTime.Hours()))%24, abs(int(endLeftTime.Minutes()))%60),
+			fmt.Sprintf("%02d天%02d小时%02d分钟", int(endLeftTime.Hours())/24, helper.Abs(int(endLeftTime.Hours()))%24, helper.Abs(int(endLeftTime.Minutes()))%60),
 			r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
 			dStr,
 			r.Link,

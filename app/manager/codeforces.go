@@ -28,11 +28,6 @@ type SolvedData struct {
 	Count       int
 }
 
-/*
-CodeforcesUser
-必须preload所有RatingChanges和最后一条Submission
-才能执行相关函数
-*/
 type CodeforcesUser struct {
 	DBUser         db.CodeforcesUser
 	SolvedProblems []SolvedData
