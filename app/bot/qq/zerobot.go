@@ -121,18 +121,20 @@ func init() {
 			cfg.Token))
 	}
 
-	for command, task := range bot.CommandMap {
-		zero.OnCommand(command).Handle(func(ctx *zero.Ctx) {
-			qCtx := newQQContext(withZeroCtx(ctx))
-			c := &bot.Context{
-				Invoker:   qCtx,
-				ProtoType: qCtx.ProtoType,
-			}
-			err := task(c)
-			if err != nil {
-				qCtx.SendError(err)
-			}
-		})
+	for commands, task := range bot.CommandMap {
+		for _, command := range *commands {
+			zero.OnCommand(command).Handle(func(ctx *zero.Ctx) {
+				qCtx := newQQContext(withZeroCtx(ctx))
+				c := &bot.Context{
+					Invoker:   qCtx,
+					ProtoType: qCtx.ProtoType,
+				}
+				err := task(c)
+				if err != nil {
+					qCtx.SendError(err)
+				}
+			})
+		}
 	}
 
 	zero.Run(&zeroCfg)

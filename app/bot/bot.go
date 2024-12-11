@@ -23,16 +23,17 @@ Bot可以直接拉到自己群里用哦`
 )
 
 var (
-	CommandMap = map[string]Task{
+	CommandMap = map[*[]string]Task{
+		{"近期比赛"}:  raceHandler(manager.GetStuACMRaces),
+		{"近期cf"}:  raceHandler(manager.GetCodeforcesRaces),
+		{"近期atc"}: raceHandler(manager.GetAtCoderRaces),
+		{"近期nk"}:  raceHandler(manager.GetNowCoderRaces),
+		{"近期lg"}:  raceHandler(manager.GetLuoguRaces),
 
-		"近期比赛":  raceHandler(manager.GetStuACMRaces),
-		"近期cf":  raceHandler(manager.GetCodeforcesRaces),
-		"近期atc": raceHandler(manager.GetAtCoderRaces),
-		"近期nk":  raceHandler(manager.GetNowCoderRaces),
-		"近期lg":  raceHandler(manager.GetLuoguRaces),
+		{"cf"}: codeforcesProfileHandler,
+		{"rt"}: codeforcesRatingHandler,
 
-		"cf": codeforcesProfileHandler,
-		"rt": codeforcesRatingHandler,
+		{"help", "菜单"}: textHandler(menuText),
 	}
 )
 
@@ -64,5 +65,12 @@ func raceHandler(provider model.RaceProvider) Task {
 			Then(getRaceFromProvider).
 			Then(sendRace).
 			Execute()
+	}
+}
+
+func textHandler(text string) Task {
+	return func(ctx *Context) error {
+		ctx.StepValue = text
+		return sendText(ctx)
 	}
 }
