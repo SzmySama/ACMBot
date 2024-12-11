@@ -3,7 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
-	"github.com/YourSuzumiya/ACMBot/app/utils/config"
+	"github.com/YourSuzumiya/ACMBot/app"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -31,7 +31,7 @@ var (
 )
 
 func init() {
-	cfg := config.GetConfig().DataBase
+	cfg := app.GetConfig().DataBase
 
 	if cfg.DatabaseName == "" {
 		log.Fatalf("database name is empty")

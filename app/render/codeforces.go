@@ -3,7 +3,7 @@ package render
 import (
 	"bytes"
 	"fmt"
-	"github.com/YourSuzumiya/ACMBot/app/model/errs"
+	"github.com/YourSuzumiya/ACMBot/app/errs"
 	"github.com/playwright-community/playwright-go"
 )
 

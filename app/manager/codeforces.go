@@ -2,14 +2,14 @@ package manager
 
 import (
 	"encoding/json"
+	"github.com/YourSuzumiya/ACMBot/app/fetcher"
+	"github.com/YourSuzumiya/ACMBot/app/render"
 	"sort"
 	"sync"
 	"time"
 
 	"github.com/YourSuzumiya/ACMBot/app/model/cache"
 	"github.com/YourSuzumiya/ACMBot/app/model/db"
-	"github.com/YourSuzumiya/ACMBot/app/model/fetcher"
-	"github.com/YourSuzumiya/ACMBot/app/model/render"
 )
 
 var (
@@ -28,11 +28,6 @@ type SolvedData struct {
 	Count       int
 }
 
-/*
-CodeforcesUser
-必须preload所有RatingChanges和最后一条Submission
-才能执行相关函数
-*/
 type CodeforcesUser struct {
 	DBUser         db.CodeforcesUser
 	SolvedProblems []SolvedData
