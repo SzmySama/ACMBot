@@ -4,7 +4,7 @@ import "github.com/YourSuzumiya/ACMBot/app/bot/message"
 
 type Context struct {
 	Invoker
-	ProtoType ProtoType
+	Platform Platform
 
 	StepValue any
 }
@@ -13,17 +13,23 @@ type Invoker interface {
 	Send(message message.Message)
 	SendError(err error)
 	Params() message.Message
-	GetSender() SenderInfo
+	GetCallerInfo() CallerInfo
 }
 
-type SenderInfo struct {
-	ID       int64
-	GroupID  int64
+type CallerInfo struct {
 	NickName string
+	ID       int64
+	Group    GroupInfo
 }
 
-type ProtoType int
+type GroupInfo struct {
+	ID          int64
+	Name        string
+	MemberCount int64
+}
+
+type Platform int
 
 const (
-	ProtoTypeQQ ProtoType = iota
+	PlatformQQ Platform = iota
 )

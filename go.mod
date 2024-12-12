@@ -4,7 +4,6 @@ go 1.23.0
 
 require (
 	github.com/go-sql-driver/mysql v1.7.0
-	github.com/go-stack/stack v1.8.1
 	github.com/playwright-community/playwright-go v0.4501.1
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/sirupsen/logrus v1.9.3
@@ -22,6 +21,7 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
+	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect

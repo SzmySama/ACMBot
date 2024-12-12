@@ -57,9 +57,11 @@ func (n Node) MixNode() (Node, bool) {
 	}
 	return n.data.(Node), true
 }
+
 func (n Node) MixNode_() Node {
 	return n.data.(Node)
 }
+
 func Text(text ...any) Node {
 
 	return Node{TypeText, fmt.Sprint(text...)}
@@ -75,4 +77,8 @@ func At(at int64) Node {
 
 func MixNode(node Node) Node {
 	return Node{TypeMixNode, node}
+}
+
+func Error(err error) Node {
+	return Node{TypeText, err.Error()}
 }

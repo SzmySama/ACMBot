@@ -1,10 +1,12 @@
 package qq
 
 import (
+	"errors"
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app"
 	"github.com/YourSuzumiya/ACMBot/app/bot"
 	myMsg "github.com/YourSuzumiya/ACMBot/app/bot/message"
+	"github.com/YourSuzumiya/ACMBot/app/errs"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
 	zMsg "github.com/wdvxdr1123/ZeroBot/message"
@@ -27,7 +29,7 @@ func withZeroCtx(zCtx *zero.Ctx) ctxOption {
 func newQQContext(opts ...ctxOption) *qqContext {
 	res := &qqContext{
 		Context: bot.Context{
-			ProtoType: bot.ProtoTypeQQ,
+			Platform:  bot.PlatformQQ,
 			StepValue: nil,
 		},
 	}
@@ -39,16 +41,28 @@ func newQQContext(opts ...ctxOption) *qqContext {
 	return res
 }
 
-func (c *qqContext) GetSender() bot.SenderInfo {
-	return bot.SenderInfo{
+func (c *qqContext) GetCallerInfo() bot.CallerInfo {
+	result := bot.CallerInfo{
 		ID:       c.zCtx.Event.UserID,
-		GroupID:  c.zCtx.Event.GroupID,
 		NickName: c.zCtx.Event.Sender.NickName,
 	}
+
+	gid := c.zCtx.Event.GroupID
+
+	if gid != 0 {
+		gInfo := c.zCtx.GetGroupInfo(gid, false)
+		result.Group = bot.GroupInfo{
+			ID:          gid,
+			Name:        gInfo.Name,
+			MemberCount: gInfo.MemberCount,
+		}
+	}
+
+	return result
 }
 
-func (c *qqContext) GetContextType() bot.ProtoType {
-	return bot.ProtoTypeQQ
+func (c *qqContext) GetContextType() bot.Platform {
+	return bot.PlatformQQ
 }
 
 func (c *qqContext) Send(msg myMsg.Message) {
@@ -133,21 +147,26 @@ func init() {
 	}
 
 	for commands, task := range bot.CommandMap {
+		handler := func(ctx *zero.Ctx) {
+			qCtx := newQQContext(withZeroCtx(ctx))
+			c := &bot.Context{
+				Invoker:  qCtx,
+				Platform: qCtx.Platform,
+			}
+			err := task(c)
+			if err == nil {
+				return
+			}
+			qCtx.Send(myMsg.Message{myMsg.Text(err.Error())})
+			var internalError errs.InternalError
+			if errors.As(err, &internalError) {
+				qCtx.SendError(err)
+			}
+		}
+
 		for _, command := range *commands {
-			zero.OnCommand(command).Handle(func(ctx *zero.Ctx) {
-				qCtx := newQQContext(withZeroCtx(ctx))
-				c := &bot.Context{
-					Invoker:   qCtx,
-					ProtoType: qCtx.ProtoType,
-				}
-				err := task(c)
-				if err != nil {
-					qCtx.Send(myMsg.Message{myMsg.Text(err.Error())})
-					qCtx.SendError(err)
-				}
-			})
+			zero.OnCommand(command).Handle(handler)
 		}
 	}
-
 	zero.Run(&zeroCfg)
 }

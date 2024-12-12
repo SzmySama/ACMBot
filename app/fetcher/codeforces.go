@@ -29,13 +29,14 @@ func init() {
 }
 
 type CodeforcesUser struct {
-	Handle      string `json:"handle"`
-	Avatar      string `json:"titlePhoto"`
-	Rating      int    `json:"rating"`
-	MaxRating   int    `json:"maxRating"`
-	Solved      int
-	FriendCount int   `json:"friendOfCount"`
-	CreatedAt   int64 `json:"registrationTimeSeconds"`
+	Handle       string `json:"handle"`
+	Avatar       string `json:"titlePhoto"`
+	Rating       int    `json:"rating"`
+	MaxRating    int    `json:"maxRating"`
+	Solved       int
+	FriendCount  int    `json:"friendOfCount"`
+	Organization string `json:"organization"`
+	CreatedAt    int64  `json:"registrationTimeSeconds"`
 }
 
 type CodeforcesProblem struct {
