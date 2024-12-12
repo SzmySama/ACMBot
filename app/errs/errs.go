@@ -40,7 +40,7 @@ func GetCallStack() string {
 var (
 	ErrNoRatingChanges = errors.New("没有找到任何Rating变化记录哦，可能分还没出来，总不可能你没打过比赛吧... ")
 	ErrHandleNotFound  = errors.New("没有叫这个名字的用户哦，是不是打错了？")
-	ErrNoParam         = errors.New("你真的填写了任何参数吗，没有听到要查询谁呢")
+	ErrNoHandle        = errors.New("没有听到要查询谁哦")
 	ErrBadParam        = errors.New("你好像发了什么不得了的东西...暂时无法处理哦")
 
 	ErrBadBranch = errors.New("internal ERROR! unexpected branch")

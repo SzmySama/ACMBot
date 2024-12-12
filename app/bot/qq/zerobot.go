@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app"
 	"github.com/YourSuzumiya/ACMBot/app/bot"
+	myMsg "github.com/YourSuzumiya/ACMBot/app/bot/message"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
-	"github.com/wdvxdr1123/ZeroBot/message"
+	zMsg "github.com/wdvxdr1123/ZeroBot/message"
 	"strings"
 )
 
@@ -50,7 +51,7 @@ func (c *qqContext) GetContextType() bot.ProtoType {
 	return bot.ProtoTypeQQ
 }
 
-func (c *qqContext) Send(msg bot.Message) {
+func (c *qqContext) Send(msg myMsg.Message) {
 	c.zCtx.Send(msgToZeroMsg(msg))
 }
 
@@ -60,44 +61,54 @@ func (c *qqContext) SendError(err error) {
 	}
 }
 
-func (c *qqContext) Params() bot.Message {
+func (c *qqContext) Params() myMsg.Message {
 	argStr := c.zCtx.State["args"].(string)
-	var res bot.Message
+	var res myMsg.Message
 	for _, s := range strings.Fields(argStr) {
-		res = append(res, s)
+		res = append(res, myMsg.Text(s))
 	}
 	return res
 }
 
-func msgToZeroMsg(msg bot.Message) message.Message {
+func trans(node myMsg.Node) zMsg.MessageSegment {
+	switch node.MessageType {
+	case myMsg.TypeText:
+		return zMsg.Text(node.Text_())
+	case myMsg.TypeImageBytes:
+		return zMsg.ImageBytes(node.ImageBytes_())
+	case myMsg.TypeAt:
+		return zMsg.At(node.At_())
+	case myMsg.TypeMixNode:
+		return trans(node.MixNode_())
+	default:
+		return zMsg.Text("Unknown message type")
+	}
+}
+
+func msgToZeroMsg(msg myMsg.Message) zMsg.Message {
 	if len(msg) == 0 {
-		return message.Message{}
+		return zMsg.Message{}
 	}
 
-	if len(msg) == 1 {
-		switch msg[0].(type) {
-		case string:
-			return message.Message{message.Text(msg[0])}
-		case []byte:
-			return message.Message{message.ImageBytes(msg[0].([]byte))}
-		default:
-			return message.Message{message.Text("Internal ERROR! Unknown message type")}
+	resultMessage := make(zMsg.Message, 0, len(msg))
+
+	appendFunc := func(n myMsg.Node) {
+		resultMessage = append(resultMessage, trans(n))
+	}
+
+	for _, v := range msg {
+		if v.MessageType == myMsg.TypeMixNode {
+			appendFunc = func(myMsg.Node) {
+				resultMessage = append(resultMessage, zMsg.CustomNode("", 0, trans(v)))
+			}
+			break
 		}
 	}
 
-	resultMessage := make(message.Message, 0, len(msg))
-	for _, node := range msg {
-		var correct any
-		switch node.(type) {
-		case string:
-			correct = node
-		case []byte:
-			correct = message.ImageBytes(node.([]byte))
-		default:
-			correct = "Internal ERROR! Unknown message type"
-		}
-		resultMessage = append(resultMessage, message.CustomNode("", 0, correct))
+	for _, v := range msg {
+		appendFunc(v)
 	}
+
 	return resultMessage
 }
 
@@ -131,6 +142,7 @@ func init() {
 				}
 				err := task(c)
 				if err != nil {
+					qCtx.Send(myMsg.Message{myMsg.Text(err.Error())})
 					qCtx.SendError(err)
 				}
 			})

@@ -1,5 +1,7 @@
 package bot
 
+import "github.com/YourSuzumiya/ACMBot/app/bot/message"
+
 type Context struct {
 	Invoker
 	ProtoType ProtoType
@@ -8,9 +10,9 @@ type Context struct {
 }
 
 type Invoker interface {
-	Send(message Message)
+	Send(message message.Message)
 	SendError(err error)
-	Params() Message
+	Params() message.Message
 	GetSender() SenderInfo
 }
 
@@ -25,9 +27,3 @@ type ProtoType int
 const (
 	ProtoTypeQQ ProtoType = iota
 )
-
-type MessageType int
-
-type Message []MessageNode
-
-type MessageNode any

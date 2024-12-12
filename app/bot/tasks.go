@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"github.com/YourSuzumiya/ACMBot/app/bot/message"
 	"github.com/YourSuzumiya/ACMBot/app/errs"
 	"github.com/YourSuzumiya/ACMBot/app/manager"
 	"github.com/YourSuzumiya/ACMBot/app/model"
@@ -11,16 +12,12 @@ type Task func(ctx *Context) error
 // getHandlerFromParams nil -> []string
 func getHandlerFromParams(ctx *Context) error {
 	params := ctx.Params()
-	if len(params) == 0 {
-		return errs.ErrNoParam
-	}
-
 	var handles []string
 
 	for _, param := range params {
-		handle, ok := param.(string)
+		handle, ok := param.Text()
 		if !ok {
-			return errs.ErrBadParam
+			continue
 		}
 		handles = append(handles, handle)
 	}
@@ -37,12 +34,11 @@ func getCodeforcesUserByHandle(ctx *Context) error {
 	}
 
 	if len(handles) == 0 {
-		ctx.SendError(errs.NewInternalError("getCodeforcesUserByHandle-handle数为0"))
-		return errs.ErrBadBranch
+		return errs.ErrNoHandle
 	}
 
 	if len(handles) > 1 {
-		ctx.Send(Message{"太多handle惹，我只查询`" + handles[0] + "`的哦"})
+		ctx.Send(message.Message{message.Text("太多handle惹，我只查询`" + handles[0] + "`的哦")})
 	}
 
 	user, err := manager.GetUpdatedCodeforcesUser(handles[0])
@@ -109,7 +105,7 @@ func sendPicture(ctx *Context) error {
 		return errs.NewInternalError("错误的参数类型")
 	}
 
-	result := Message{pic}
+	result := message.Message{message.ImageBytes(pic)}
 	ctx.Send(result)
 	ctx.StepValue = nil
 	return nil
@@ -122,9 +118,9 @@ func sendRace(ctx *Context) error {
 		return errs.NewInternalError("错误的参数类型")
 	}
 
-	var result Message
+	var result message.Message
 	for _, v := range race {
-		result = append(result, v.String())
+		result = append(result, message.MixNode(message.Text(v.String())))
 	}
 	ctx.Send(result)
 	ctx.StepValue = nil
@@ -136,7 +132,7 @@ func sendText(ctx *Context) error {
 	if !ok {
 		return errs.NewInternalError("错误的参数类型")
 	}
-	ctx.Send(Message{text})
+	ctx.Send(message.Message{message.Text(text)})
 	ctx.StepValue = nil
 	return nil
 }
