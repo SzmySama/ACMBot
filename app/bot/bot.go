@@ -13,27 +13,26 @@ var (
 	menuText = `以下是功能菜单：所有命令都要加上前缀` + CommandPrefix + `🥰
 1.cf [username]，用于查询codeforces用户的基本信息
 2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线
-3.近期[比赛,atc,nk,lg]，用于查询近期的比赛数据，数据来源于sdutacm.cn
-4.近期cf，用于查询近期的codeforces数据，数据来源codeforces.com
+3.近期[比赛,atc,nk,lg,cf]，用于查询近期的比赛数据，数据来源于clist.by
 项目地址https://github.com/YourSuzumiya/ACMBot，喜欢可以加个Star支持一下
 Bot可以直接拉到自己群里用哦`
 )
 
 var (
 	CommandMap = map[*[]string]Task{
-		{"近期比赛"}:  raceHandler(manager.GetStuACMRaces),
-		{"近期cf"}:  raceHandler(manager.GetCodeforcesRaces),
-		{"近期atc"}: raceHandler(manager.GetAtCoderRaces),
-		{"近期nk"}:  raceHandler(manager.GetNowCoderRaces),
-		{"近期lg"}:  raceHandler(manager.GetLuoguRaces),
+		{"近期比赛"}:  raceHandler(manager.GetAllCachedRaces),
+		{"近期cf"}:  raceHandler(manager.GetCachedRacesByResource(model.ResourceCodeforces)),
+		{"近期atc"}: raceHandler(manager.GetCachedRacesByResource(model.ResourceAtcoder)),
+		{"近期nk"}:  raceHandler(manager.GetCachedRacesByResource(model.ResourceNowcoder)),
+		{"近期lg"}:  raceHandler(manager.GetCachedRacesByResource(model.ResourceLuogu)),
 
 		{"cf"}: codeforcesProfileHandler,
 		{"rt"}: codeforcesRatingHandler,
 
 		{"help", "菜单"}: textHandler(menuText),
 
-		{"bind"}: bindCodeforcesUserHandler,
-		{"rank"}: qqGroupRankHandler,
+		//{"bind"}: bindCodeforcesUserHandler,
+		//{"rank"}: qqGroupRankHandler,
 	}
 )
 

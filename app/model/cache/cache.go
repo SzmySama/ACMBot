@@ -26,10 +26,6 @@ func init() {
 	}
 }
 
-func GetRedisClient() *redis.Client {
-	return rdb
-}
-
 func IsNil(err error) bool {
 	return errors.Is(err, redis.Nil)
 }

@@ -112,8 +112,8 @@ func msgToZeroMsg(msg myMsg.Message) zMsg.Message {
 
 	for _, v := range msg {
 		if v.MessageType == myMsg.TypeMixNode {
-			appendFunc = func(myMsg.Node) {
-				resultMessage = append(resultMessage, zMsg.CustomNode("", 0, trans(v)))
+			appendFunc = func(n myMsg.Node) {
+				resultMessage = append(resultMessage, zMsg.CustomNode("", 0, zMsg.Message{trans(n)}))
 			}
 			break
 		}

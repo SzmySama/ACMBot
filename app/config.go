@@ -63,9 +63,10 @@ type BotConfigStruct struct {
 	WS            []WebsocketConfigStruct `mapstructure:"websocket" toml:"websocket"`
 }
 
-type CodeforcesConfigStruct struct {
-	Key    string `mapstructure:"key" toml:"key"`
-	Secret string `mapstructure:"secret" toml:"secret"`
+type FetcherConfigStruct struct {
+	CodeforcesKey      string `mapstructure:"key" toml:"codeforces_key"`
+	CodeforcesSecret   string `mapstructure:"secret" toml:"codeforces_secret"`
+	ClistAuthenticated string `mapstructure:"clist_authenticated" toml:"clist_authenticated"`
 }
 
 type DataBaseConfigStruct struct {
@@ -86,10 +87,10 @@ type RedisConfigStruct struct {
 }
 
 type AllConfigStruct struct {
-	Bot        BotConfigStruct        `mapstructure:"bot" toml:"bot"`
-	Codeforces CodeforcesConfigStruct `mapstructure:"codeforces" toml:"codeforces"`
-	DataBase   DataBaseConfigStruct   `mapstructure:"database" toml:"database"`
-	Redis      RedisConfigStruct      `mapstructure:"redis" toml:"redis"`
+	Bot      BotConfigStruct      `mapstructure:"bot" toml:"bot"`
+	Fetcher  FetcherConfigStruct  `mapstructure:"fetcher" toml:"fetcher"`
+	DataBase DataBaseConfigStruct `mapstructure:"database" toml:"database"`
+	Redis    RedisConfigStruct    `mapstructure:"redis" toml:"redis"`
 }
 
 func configInit() {
@@ -100,7 +101,7 @@ func configInit() {
 
 	viper.SetDefault("DataBase", defaultConfig.DataBase)
 	viper.SetDefault("Bot", defaultConfig.Bot)
-	viper.SetDefault("Codeforces", defaultConfig.Codeforces)
+	viper.SetDefault("Fetcher", defaultConfig.Fetcher)
 	viper.SetDefault("Redis", defaultConfig.Redis)
 }
 

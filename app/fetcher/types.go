@@ -7,7 +7,7 @@ import (
 
 func (cr *CodeforcesRace) ToRace() *model.Race {
 	return &model.Race{
-		Source:    "Codeforces",
+		Source:    "Fetcher",
 		Name:      cr.Name,
 		Link:      "https://codeforces.com/contests/",
 		StartTime: time.Unix(cr.StartTimeSeconds, 0),

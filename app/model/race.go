@@ -6,6 +6,16 @@ import (
 	"time"
 )
 
+const (
+	ResourceCodeforces = "codeforces.com"
+	ResourceAtcoder    = "atcoder.jp"
+	ResourceLeetcode   = "leetcode.com"
+	ResourceLuogu      = "luogu.com.cn"
+	ResourceNowcoder   = "ac.nowcoder.com"
+)
+
+var AllRaceResource = []string{ResourceCodeforces, ResourceLuogu, ResourceAtcoder, ResourceLeetcode, ResourceNowcoder}
+
 type Race struct {
 	Source    string    `json:"source"`
 	Name      string    `json:"name"`

@@ -17,7 +17,7 @@ var (
 		"牛客竞赛",
 		"洛谷",
 		"AtCoder",
-		"Codeforces",
+		"Fetcher",
 	}
 )
 
@@ -74,7 +74,7 @@ func FetchCodeforcesRaces() ([]model.Race, error) {
 		}
 
 		result = append(result, model.Race{
-			Source:    "Codeforces",
+			Source:    "Fetcher",
 			Name:      race.Name,
 			Link:      "https://codeforces.com/contests",
 			StartTime: time.Unix(race.StartTimeSeconds, 0),

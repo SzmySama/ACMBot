@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/YourSuzumiya/ACMBot/app"
 	"github.com/YourSuzumiya/ACMBot/app/errs"
+	"github.com/YourSuzumiya/ACMBot/app/helper"
 	"io"
 	"net/http"
 	"sort"
@@ -21,11 +22,11 @@ import (
 )
 
 var (
-	cfg *app.CodeforcesConfigStruct
+	cfg *app.FetcherConfigStruct
 )
 
 func init() {
-	cfg = &app.GetConfig().Codeforces
+	cfg = &app.GetConfig().Fetcher
 }
 
 type CodeforcesUser struct {
@@ -77,11 +78,6 @@ type CodeforcesRace struct {
 	RelativeTimeSeconds int64  `json:"relativeTimeSeconds"`
 }
 
-func zero[T any]() T {
-	var t T
-	return t
-}
-
 var cfLock sync.Mutex
 
 func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error) {
@@ -101,7 +97,7 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error)
 
 	apiURL := "https://codeforces.com/api/"
 
-	args["apiKey"] = cfg.Key
+	args["apiKey"] = cfg.CodeforcesKey
 	args["time"] = strconv.Itoa(int(time.Now().Unix()))
 
 	var sortedArgs []string
@@ -111,7 +107,7 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error)
 	sort.Strings(sortedArgs)
 
 	randStr := strconv.Itoa(rand.Intn(900000) + 100000)
-	hashSource := randStr + "/" + apiMethod + "?" + strings.Join(sortedArgs, "&") + "#" + cfg.Secret
+	hashSource := randStr + "/" + apiMethod + "?" + strings.Join(sortedArgs, "&") + "#" + cfg.CodeforcesSecret
 
 	h := sha512.New()
 	h.Write([]byte(hashSource))
@@ -127,7 +123,7 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error)
 
 	resp, err := http.Get(apiFullURL)
 	if err != nil {
-		return zero[T](), err
+		return helper.Zero[T](), err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -138,19 +134,19 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return zero[T](), err
+		return helper.Zero[T](), err
 	}
 
 	var res codeforcesResponse[T]
 	if err := json.Unmarshal(body, &res); err != nil {
-		return zero[T](), err
+		return helper.Zero[T](), err
 	}
 	if res.Status != "OK" {
 		if strings.HasSuffix(res.Comment, "not found") {
-			return zero[T](), errs.ErrHandleNotFound
+			return helper.Zero[T](), errs.ErrHandleNotFound
 		}
 		log.Infof("Status is not OK")
-		return zero[T](), fmt.Errorf(res.Comment)
+		return helper.Zero[T](), fmt.Errorf(res.Comment)
 	}
 
 	return res.Result, nil

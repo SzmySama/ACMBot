@@ -207,6 +207,11 @@ func sendRace(ctx *Context) error {
 		return errs.NewInternalError("错误的参数类型")
 	}
 
+	if len(race) == 0 {
+		ctx.Send(message.Message{message.Text("没有获取到相关数据...")})
+		return nil
+	}
+
 	var result message.Message
 	for _, v := range race {
 		result = append(result, message.MixNode(message.Text(v.String())))
