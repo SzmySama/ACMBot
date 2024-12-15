@@ -75,5 +75,18 @@ func (r *Race) String() string {
 			r.Link,
 		)
 	}
-	return "Internal ERROR! Finished race shouldn't exist!"
+	return fmt.Sprintf(
+		""+
+			"此比赛已经结束了\n"+
+			"比赛来源: %s\n"+
+			"比赛名称: %s\n"+
+			"开始时间: %s\n"+
+			"持续时间: %s\n"+
+			"传送门🌈: %s",
+		r.Source,
+		r.Name,
+		r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
+		dStr,
+		r.Link,
+	)
 }
