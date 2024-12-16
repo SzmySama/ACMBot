@@ -146,6 +146,24 @@ func init() {
 			cfg.Token))
 	}
 
+	zero.OnRequest(func(ctx *zero.Ctx) bool {
+		return ctx.Event.RequestType == "group"
+	}).Handle(func(ctx *zero.Ctx) {
+		ctx.SetGroupAddRequest(ctx.Event.Flag, ctx.Event.SubType, true, "")
+		for _, user := range cfg.SuperUsers {
+			ctx.SendPrivateMessage(user, fmt.Sprintf("已自动同意加群邀请: %d", ctx.Event.GroupID))
+		}
+	})
+
+	zero.OnRequest(func(ctx *zero.Ctx) bool {
+		return ctx.Event.RequestType == "friend"
+	}).Handle(func(ctx *zero.Ctx) {
+		ctx.SetFriendAddRequest(ctx.Event.Flag, true, "")
+		for _, user := range cfg.SuperUsers {
+			ctx.SendPrivateMessage(user, fmt.Sprintf("已自动同意好友请求: %d", ctx.Event.UserID))
+		}
+	})
+
 	for commands, task := range bot.CommandMap {
 		handler := func(ctx *zero.Ctx) {
 			qCtx := newQQContext(withZeroCtx(ctx))

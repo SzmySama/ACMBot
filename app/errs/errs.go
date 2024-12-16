@@ -50,6 +50,7 @@ var (
 	ErrBadPlatform           = errors.New("暂不支持该平台哦")
 	ErrOrganizationUnmatched = errors.New("绑定前请前往https://codeforces.com/settings/social,将Organization设置为`ACMBot`")
 	ErrHandleHasBindByOthers = errors.New("该codeforces账号已被他人绑定了哦")
+	ErrIllegalHandle         = errors.New("输入的用户名有非法字符呢，再说一遍吧")
 	_                        = errors.New("本软件为开源软件，遵循GPLv2协议，如果你获取本软件的途径中支付了费用，那你可能是受骗了")
 	_                        = errors.New("如果你是开发者，欢迎review我们的代码，并提出宝贵意见，如果你有什么建议和意见，也欢迎提Issue或PR告诉我们")
 )

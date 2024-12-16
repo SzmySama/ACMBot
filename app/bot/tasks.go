@@ -25,6 +25,11 @@ func getHandlerFromParams(ctx *Context) error {
 		if !ok {
 			continue
 		}
+		for _, c := range handle {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '.' || c == '-') {
+				return errs.ErrIllegalHandle
+			}
+		}
 		handles = append(handles, handle)
 	}
 
