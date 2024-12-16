@@ -153,6 +153,7 @@ func init() {
 		for _, user := range cfg.SuperUsers {
 			ctx.SendPrivateMessage(user, fmt.Sprintf("已自动同意加群邀请: %d", ctx.Event.GroupID))
 		}
+		ctx.SendPrivateMessage(ctx.Event.UserID, fmt.Sprintf("已自动同意加群邀请: %d", ctx.Event.GroupID))
 	})
 
 	zero.OnRequest(func(ctx *zero.Ctx) bool {
