@@ -41,9 +41,16 @@ func GetCallStack() []runtime.Frame {
 	return frames
 }
 
+type ErrHandleNotFound struct {
+	Handle string
+}
+
+func (e ErrHandleNotFound) Error() string {
+	return fmt.Sprintf("没有叫%s的用户哦，是不是打错了？", e.Handle)
+}
+
 var (
 	ErrNoRatingChanges       = errors.New("没有找到任何Rating变化记录哦，可能分还没出来，总不可能你没打过比赛吧... ")
-	ErrHandleNotFound        = errors.New("没有叫这个名字的用户哦，是不是打错了？")
 	ErrNoHandle              = errors.New("没有听到要查询谁哦")
 	ErrGroupOnly             = errors.New("该功能必须要在群内使用哦")
 	ErrImDedicated           = errors.New("需要且仅一个参数哦，不要发无效信息啦~")

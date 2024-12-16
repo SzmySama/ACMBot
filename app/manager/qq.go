@@ -27,7 +27,7 @@ func BindQQAndCodeforcesHandler(qqBind QQBind) error {
 	var err error
 	var user *fetcher.CodeforcesUser
 	if user, err = fetcher.FetchCodeforcesUserInfo(qqBind.CodeforcesHandle, false); err != nil {
-		if errors.Is(err, errs.ErrHandleNotFound) {
+		if errors.Is(err, errs.ErrHandleNotFound{}) {
 			return err
 		}
 		log.Errorf("fetch failed %v", err)

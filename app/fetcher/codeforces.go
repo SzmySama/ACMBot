@@ -142,10 +142,6 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error)
 		return helper.Zero[T](), err
 	}
 	if res.Status != "OK" {
-		if strings.HasSuffix(res.Comment, "not found") {
-			return helper.Zero[T](), errs.ErrHandleNotFound
-		}
-		log.Infof("Status is not OK")
 		return helper.Zero[T](), fmt.Errorf(res.Comment)
 	}
 
@@ -158,10 +154,17 @@ func fetchCodeforcesAPI[T any](apiMethod string, args map[string]any) (T, error)
 */
 
 func FetchCodeforcesUsersInfo(handles []string, checkHistoricHandles bool) ([]CodeforcesUser, error) {
-	return fetchCodeforcesAPI[[]CodeforcesUser]("user.info", map[string]any{
+	users, err := fetchCodeforcesAPI[[]CodeforcesUser]("user.info", map[string]any{
 		"handles":              strings.Join(handles, ";"),
 		"checkHistoricHandles": checkHistoricHandles,
 	})
+	if err != nil {
+		if strings.HasSuffix(err.Error(), "not found") {
+			return nil, errs.ErrHandleNotFound{Handle: strings.Join(handles, ";")}
+		}
+		return nil, err
+	}
+	return users, nil
 }
 
 func FetchCodeforcesSubmissions(handle string, from, count int) ([]CodeforcesSubmission, error) {
@@ -190,7 +193,7 @@ func FetchCodeforcesUserInfo(handle string, checkHistoricHandles bool) (*Codefor
 		return nil, err
 	}
 	if len(users) != 1 {
-		return nil, errs.ErrHandleNotFound
+		return nil, errs.ErrHandleNotFound{Handle: handle}
 	}
 	return &users[0], nil
 }
