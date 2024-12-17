@@ -11,6 +11,7 @@ import (
 	"github.com/wdvxdr1123/ZeroBot/driver"
 	zMsg "github.com/wdvxdr1123/ZeroBot/message"
 	"strings"
+	"time"
 )
 
 type qqContext struct {
@@ -154,6 +155,7 @@ func init() {
 			ctx.SendPrivateMessage(user, fmt.Sprintf("已自动同意加群邀请: %d", ctx.Event.GroupID))
 		}
 		ctx.SendPrivateMessage(ctx.Event.UserID, fmt.Sprintf("已自动同意加群邀请: %d", ctx.Event.GroupID))
+		ctx.SendPrivateMessage(ctx.Event.UserID, "要去新地方了呢~\n如果大家不知道如何使用，可以用`#help`, `#菜单`呼出功能列表哦")
 	})
 
 	zero.OnRequest(func(ctx *zero.Ctx) bool {
@@ -163,6 +165,10 @@ func init() {
 		for _, user := range cfg.SuperUsers {
 			ctx.SendPrivateMessage(user, fmt.Sprintf("已自动同意好友请求: %d", ctx.Event.UserID))
 		}
+		go func() {
+			time.Sleep(5 * time.Second)
+			ctx.SendPrivateMessage(ctx.Event.UserID, "很高兴认识你~ \n"+bot.MenuText)
+		}()
 	})
 
 	for commands, task := range bot.CommandMap {
