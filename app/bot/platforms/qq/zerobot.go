@@ -171,14 +171,16 @@ func init() {
 		}()
 	})
 
-	for commands, task := range bot.CommandMap {
-		handler := func(ctx *zero.Ctx) {
+	for _, command := range bot.Commands {
+		commands := command.Commands
+		handler := command.Handler
+		zeroHandler := func(ctx *zero.Ctx) {
 			qCtx := newQQContext(withZeroCtx(ctx))
 			c := &bot.Context{
 				Invoker:  qCtx,
 				Platform: qCtx.Platform,
 			}
-			err := task(c)
+			err := handler(c)
 			if err == nil {
 				return
 			}
@@ -189,8 +191,8 @@ func init() {
 			}
 		}
 
-		for _, command := range *commands {
-			zero.OnCommand(command).Handle(handler)
+		for _, command := range commands {
+			zero.OnCommand(command).Handle(zeroHandler)
 		}
 	}
 	zero.Run(&zeroCfg)

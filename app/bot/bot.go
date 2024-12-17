@@ -22,21 +22,23 @@ var (
 Bot可以直接拉到自己群里用，bot会自动同意好友请求和加群邀请呢`
 )
 
+type CommandHandler struct {
+	Commands []string
+	Handler  Task
+}
+
 var (
-	CommandMap = map[*[]string]Task{
-		{"近期比赛"}: raceHandler(manager.GetAllCachedRaces),
-		{"近期cf"}:   raceHandler(manager.GetCachedRacesByResource(model.ResourceCodeforces)),
-		{"近期atc"}:  raceHandler(manager.GetCachedRacesByResource(model.ResourceAtcoder)),
-		{"近期nk"}:   raceHandler(manager.GetCachedRacesByResource(model.ResourceNowcoder)),
-		{"近期lg"}:   raceHandler(manager.GetCachedRacesByResource(model.ResourceLuogu)),
+	Commands = []CommandHandler{
+		{[]string{"近期比赛"}, raceHandler(manager.GetAllCachedRaces)},
+		{[]string{"近期cf"}, raceHandler(manager.GetCachedRacesByResource(model.ResourceCodeforces))},
+		{[]string{"近期atc"}, raceHandler(manager.GetCachedRacesByResource(model.ResourceAtcoder))},
+		{[]string{"近期nk"}, raceHandler(manager.GetCachedRacesByResource(model.ResourceNowcoder))},
+		{[]string{"近期lg"}, raceHandler(manager.GetCachedRacesByResource(model.ResourceLuogu))},
 
-		{"cf"}: codeforcesProfileHandler,
-		{"rt"}: codeforcesRatingHandler,
+		{[]string{"cf"}, codeforcesProfileHandler},
+		{[]string{"rt"}, codeforcesRatingHandler},
 
-		{"help", "菜单"}: textHandler(MenuText),
-
-		//{"bind"}: bindCodeforcesUserHandler,
-		//{"rank"}: qqGroupRankHandler,
+		{[]string{"help", "菜单"}, textHandler(MenuText)},
 	}
 )
 
