@@ -3,7 +3,6 @@ package fetcher
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,6 +16,44 @@ import (
 	"github.com/gocolly/colly/v2"
 	log "github.com/sirupsen/logrus"
 )
+
+const (
+	baseURL     = "https://atcoder.jp"
+	apiBaseURL  = "https://kenkoooo.com/atcoder"
+	rateLimit   = 50 * time.Millisecond
+	httpTimeout = 30 * time.Second
+)
+
+var (
+	// 全局限流器，所有 API 请求共享
+	apiLimiter = rate.NewLimiter(rate.Every(rateLimit), 1)
+)
+
+type Config struct {
+	BaseURL     string
+	APIBaseURL  string
+	RateLimit   time.Duration
+	HTTPTimeout time.Duration
+}
+
+type AtcoderFetcher struct {
+	config  *Config
+	client  *colly.Collector
+	limiter *rate.Limiter
+}
+
+func NewAtcoderFetcher(config *Config) *AtcoderFetcher {
+	c := colly.NewCollector(
+		colly.AllowedDomains("atcoder.jp"),
+		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"),
+	)
+
+	return &AtcoderFetcher{
+		config:  config,
+		client:  c,
+		limiter: rate.NewLimiter(rate.Every(config.RateLimit), 1),
+	}
+}
 
 type AtcoderUser struct {
 	Handle           string // Atcoder用户名
@@ -52,20 +89,78 @@ type AtcoderContest struct {
 	RateChange     string `json:"rate_change"`        // Rated分数范围
 }
 
-var (
-	c = colly.NewCollector(
+type AtcoderError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *AtcoderError) Error() string {
+	return fmt.Sprintf("atcoder error: status=%d, message=%s", e.StatusCode, e.Message)
+}
+
+
+// API 相关函数
+func fetchAPI[T any](suffix string, args map[string]any) (*T, error) {
+	requestURL := apiBaseURL + "/" + suffix + "?"
+	for k, v := range args {
+		requestURL += k + "=" + fmt.Sprint(v) + "&"
+	}
+	requestURL = requestURL[:len(requestURL)-1]
+
+	ctx, cancel := context.WithTimeout(context.Background(), httpTimeout)
+	defer cancel()
+
+	// 使用全局限流器
+	if err := apiLimiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("rate limit: %w", err)
+	}
+
+	response, err := http.Get(requestURL)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var res T
+	if err := json.Unmarshal(body, &res); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func FetchAtcoderUserSubmissionList(handle string, from int64) (*[]AtcoderUserSubmission, error) {
+	return fetchAPI[[]AtcoderUserSubmission]("atcoder-api/v3/user/submissions", map[string]any{
+		"user":        handle,
+		"from_second": from,
+	})
+}
+
+func FetchAtcoderContestList() (*[]AtcoderContest, error) {
+	return fetchAPI[[]AtcoderContest]("resources/contests.json", nil)
+}
+
+// 独立的网页爬虫函数
+func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
+	logger := log.WithFields(log.Fields{
+		"handle": handle,
+		"action": "fetch_user",
+	})
+
+	logger.Info("Starting fetch user")
+	user := &AtcoderUser{Handle: handle}
+	var e error
+
+	d := colly.NewCollector(
 		colly.AllowedDomains("atcoder.jp"),
 		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"),
 	)
-	atcoderLimiter = rate.NewLimiter(rate.Every(2*time.Second), 1)
-)
 
-// handle: Atcoder用户名
-func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
-	user := &AtcoderUser{Handle: handle}
-	var e error = nil
-
-	d := c.Clone()
 	d.OnHTML("tr", func(h *colly.HTMLElement) {
 		var err error
 		switch h.ChildText("th") {
@@ -117,77 +212,27 @@ func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
 			return
 		}
 
-		user, e = nil, err
-		if r.StatusCode == http.StatusNotFound {
-			e = errs.ErrHandleNotFound
-			log.Infof("Handle not found: %v", handle)
-			return
+		switch r.StatusCode {
+		case http.StatusNotFound:
+			e = &errs.ErrHandleNotFound{Handle: handle}
+		default:
+			e = &AtcoderError{
+				StatusCode: r.StatusCode,
+				Message:    err.Error(),
+			}
 		}
-		log.Infof("Failed to fetch Atcoder user: %v", err)
+		log.WithFields(log.Fields{
+			"handle": handle,
+			"error":  e,
+		}).Info("Failed to fetch Atcoder user")
 	})
 
-	url := "https://atcoder.jp/users/" + handle
+	url := baseURL + "/users/" + handle
 	log.Infof("Visiting: %v", url)
-
-	// Depress Warning
 	_ = d.Visit(url)
 
+	logger.Info("Completed fetch user")
 	return user, e
-}
-
-func fetchAtcoderAPI[T any](suffix string, args map[string]any) (*T, error) {
-	requestURL := "https://kenkoooo.com/atcoder/" + suffix + "?"
-	for k, v := range args {
-		requestURL += k + "=" + fmt.Sprint(v) + "&"
-	}
-
-	requestURL = requestURL[:len(requestURL)-1]
-	log.Infof("Visiting: %v", requestURL)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30 * time.Second)
-	defer cancel()
-	if err := atcoderLimiter.Wait(ctx); err != nil {
-		log.Infof("Timeout or cancelled while waiting: %v", err)
-		return nil, err
-	}
-
-	response, err := http.Get(requestURL)
-	if err != nil && errors.Is(err, io.EOF) {
-		log.Infof("Failed to fetch Atcoder API: %v", err)
-		return nil, err
-	}
-
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		log.Infof("Failed to read response body: %v", err)
-		return nil, err
-	}
-
-	if err := response.Body.Close(); err != nil {
-		log.Infof("Failed to close response body: %v", err)
-		return nil, err
-	}
-
-	var res T
-	if err := json.Unmarshal(body, &res); err != nil {
-		log.Infof("Failed to unmarshal response body: %v\n %v", string(body), err)
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-// 获取名为handle的用户，时间从from开始的最多500条提交，from为UNIX时间戳
-func FetchAtcoderUserSubmissionList(handle string, from int64) (*[]AtcoderUserSubmission, error) {
-	return fetchAtcoderAPI[[]AtcoderUserSubmission]("atcoder-api/v3/user/submissions", map[string]any{
-		"user":        handle,
-		"from_second": from,
-	})
-}
-
-// 获取Atcoder比赛列表
-func FetchAtcoderContestList() (*[]AtcoderContest, error) {
-	return fetchAtcoderAPI[[]AtcoderContest]("resources/contests.json", nil)
 }
 
 func atoui(s string) (uint, error) {
