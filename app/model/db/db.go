@@ -3,24 +3,38 @@ package db
 import (
 	"errors"
 	"fmt"
-
-	"github.com/YourSuzumiya/ACMBot/app/utils/config"
-	mysqldriver "github.com/go-sql-driver/mysql"
+	"github.com/YourSuzumiya/ACMBot/app"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+
+	mysqldriver "github.com/go-sql-driver/mysql"
 )
+
+const (
+	signalInsertLimit = 500
+)
+
+func IsNotFound(err error) bool {
+	return errors.Is(err, gorm.ErrRecordNotFound)
+}
+
+func MigrateAll() (err error) {
+	if err = MigrateCodeforces(); err != nil {
+		return err
+	}
+	if err = MigrateQQ(); err != nil {
+		return err
+	}
+	return nil
+}
 
 var (
 	db *gorm.DB
 )
 
-func GetDBConnection() *gorm.DB {
-	return db
-}
-
 func init() {
-	cfg := config.GetConfig().DataBase
+	cfg := app.GetConfig().DataBase
 
 	if cfg.DatabaseName == "" {
 		log.Fatalf("database name is empty")
@@ -69,8 +83,4 @@ func init() {
 			}
 		}
 	}
-}
-
-func IsNotFound(err error) bool {
-	return errors.Is(err, gorm.ErrRecordNotFound)
 }

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/YourSuzumiya/ACMBot/app/model/errs"
+	"github.com/YourSuzumiya/ACMBot/app/errs"
 	"github.com/gocolly/colly/v2"
 	log "github.com/sirupsen/logrus"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/YourSuzumiya/ACMBot/app/utils/config"
+	"github.com/YourSuzumiya/ACMBot/app"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -14,7 +14,7 @@ var (
 )
 
 func init() {
-	cfg := config.GetConfig().Redis
+	cfg := app.GetConfig().Redis
 	rdb = redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Password: cfg.Password,
@@ -24,10 +24,6 @@ func init() {
 	if err := rdb.Ping(Ctx).Err(); err != nil {
 		panic("redis connect failed")
 	}
-}
-
-func GetRedisClient() *redis.Client {
-	return rdb
 }
 
 func IsNil(err error) bool {

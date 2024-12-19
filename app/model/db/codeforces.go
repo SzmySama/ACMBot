@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"gorm.io/gorm"
 	"time"
 )
@@ -33,9 +34,9 @@ type CodeforcesUser struct {
 
 	Handle      string `gorm:"uniqueIndex;index:idx_handle"`
 	Avatar      string
-	Rating      uint
-	FriendCount uint
-	Solved      uint
+	Rating      int
+	MaxRating   int
+	FriendCount int
 
 	Submissions   []CodeforcesSubmission
 	RatingChanges []CodeforcesRatingChange
@@ -71,7 +72,7 @@ type CodeforcesRatingChange struct {
 }
 
 func MigrateCodeforces() error {
-	return GetDBConnection().AutoMigrate(
+	return db.AutoMigrate(
 		&CodeforcesUser{},
 		&CodeforcesProblem{},
 		&CodeforcesSubmission{},
@@ -79,9 +80,9 @@ func MigrateCodeforces() error {
 	)
 }
 
-func CountCodeforcesSolvedByUID(uid uint) (uint, error) {
-	result := uint(0)
-	if err := GetDBConnection().Raw(`
+func CountCodeforcesSolvedByUID(uid uint) (int, error) {
+	result := 0
+	if err := db.Raw(`
 		SELECT COUNT(DISTINCT codeforces_problem_id) 
 		FROM codeforces_submissions 
 		WHERE codeforces_user_id = ? AND status = ?`,
@@ -93,9 +94,7 @@ func CountCodeforcesSolvedByUID(uid uint) (uint, error) {
 
 func LoadCodeforcesUserByHandle(handle string) (*CodeforcesUser, error) {
 	result := &CodeforcesUser{}
-	if err := GetDBConnection().
-		Preload("Submissions", func(db *gorm.DB) *gorm.DB { return db.Order("at DESC").Limit(1) }).
-		Preload("RatingChanges").Where("handle = ?", handle).First(result).Error; err != nil {
+	if err := db.Where("handle = ?", handle).First(result).Error; err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -115,7 +114,7 @@ func LoadCodeforcesSolvedProblemByUID(UID uint) ([]CodeforcesProblem, error) {
 	}
 
 	problemIDs := make([]string, 0, len(m))
-	for k, _ := range m {
+	for k := range m {
 		problemIDs = append(problemIDs, k)
 	}
 	var problems []CodeforcesProblem
@@ -123,4 +122,70 @@ func LoadCodeforcesSolvedProblemByUID(UID uint) ([]CodeforcesProblem, error) {
 		return nil, err
 	}
 	return problems, nil
+}
+
+func LoadLastCodeforcesSubmissionByUID(UID uint) (*CodeforcesSubmission, error) {
+	result := &CodeforcesSubmission{}
+	if err := db.Where("codeforces_user_id = ?", UID).Order("at DESC").First(result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
+func LoadLastCodeforcesRatingChangeByUID(UID uint) (*CodeforcesRatingChange, error) {
+	result := &CodeforcesRatingChange{}
+	if err := db.Where("codeforces_user_id = ?", UID).Order("at DESC").First(result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
+func LoadCodeforcesRatingChangesByUID(UID uint) ([]CodeforcesRatingChange, error) {
+	result := make([]CodeforcesRatingChange, 0)
+	if err := db.Where("codeforces_user_id = ?", UID).Find(&result).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return result, nil
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
+func SaveCodeforcesProblems(problems []CodeforcesProblem) error {
+	return saveLoop[CodeforcesProblem](problems)
+}
+
+func SaveCodeforcesUser(user *CodeforcesUser) error {
+	return db.Save(user).Error
+}
+
+func SaveCodeforcesSubmissions(submissions []CodeforcesSubmission) error {
+	return saveLoop[CodeforcesSubmission](submissions)
+}
+
+func SaveCodeforcesRatingChanges(changes []CodeforcesRatingChange) error {
+	return saveLoop[CodeforcesRatingChange](changes)
+}
+
+func saveLoop[T any](data []T) error {
+	for i := 0; i < len(data); i += signalInsertLimit {
+		if err := db.Save(data[i:min(len(data), i+signalInsertLimit)]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetCodeforcesUserID(handle string) (uint, error) {
+	var user CodeforcesUser
+	if err := db.Model(&CodeforcesUser{}).Where("handle = ?", handle).Select("id").First(&user).Error; err != nil {
+		return 0, err
+	}
+	return user.ID, nil
 }

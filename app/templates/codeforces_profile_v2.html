@@ -2,187 +2,185 @@
 <html>
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            custom: ['"ZSFT-ENMIN-184"'], // 自定义字体名
-          },
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        custom: ['"ZSFT-ENMIN-184"'], // 自定义字体名
+                    },
+                }
+            }
         }
-      }
-    }
-  </script>
-  <style type="text/tailwindcss">
-    @layer utilities {
-      @font-face {
-        font-family: 'ZSFT-ENMIN-184';
-        src: url('https://static.zeoseven.com/zsft/184/main.woff2') format('woff2'),
-            url('https://static-host.zeoseven.com/zsft/184/main.woff2') format('woff2');
-        unicode-range: U+0061-007A, U+0041-005A, U+0030-0039, U+FF0C, U+3002, U+002E, U+002C, U+0021, U+003F, U+003A, U+003B, U+002D, U+FF01, U+FF1F;
-      }
-    }
-  </style>
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            @font-face {
+                font-family: 'ZSFT-ENMIN-184';
+                src: url('https://static.zeoseven.com/zsft/184/main.woff2') format('woff2'),
+                url('https://static-host.zeoseven.com/zsft/184/main.woff2') format('woff2');
+                unicode-range: U+0061-007A, U+0041-005A, U+0030-0039, U+FF0C, U+3002, U+002E, U+002C, U+0021, U+003F, U+003A, U+003B, U+002D, U+FF01, U+FF1F;
+            }
+        }
+    </style>
 </head>
 
 <body>
-  <div id="background" class="grid h-[25rem] w-[18.75rem] grid-cols-9 grid-rows-9 text-white font-custom font-semibold">
+<div id="background" class="grid h-[25rem] w-[18.75rem] grid-cols-9 grid-rows-9 text-white font-custom font-semibold">
     <div class="row-span-1 col-span-5 text-gray-300 text-[0.4rem]"></div>
     <div class="row-span-1 col-span-4 text-gray-200 text-left -mr-3 mt-2 grid grid-rows-3 grid-cols-10">
-      <div class="col-start-3 col-span-1 flex items-end">
-          <div class="bg-yellow-400 h-[0.5rem] w-[0.2rem] ml-[0.5px] mr-[1px] rounded-md"></div>
-          <div class="bg-blue-400 h-[0.75rem] w-[0.2rem] mr-[1px] rounded-md"></div>
-          <div class="bg-red-400 h-[0.4rem] w-[0.2rem] mr-[0.5px] rounded-md"></div>
-      </div>
-      <div class=" col-span-6 text-sm font-semibold -mt-[2px]"><span class="ml-[2px]">Code</span><span id="Forces" class="">Forces</span></div>
+        <div class="col-start-3 col-span-1 flex items-end">
+            <div class="bg-yellow-400 h-[0.5rem] w-[0.2rem] ml-[0.5px] mr-[1px] rounded-md"></div>
+            <div class="bg-blue-400 h-[0.75rem] w-[0.2rem] mr-[1px] rounded-md"></div>
+            <div class="bg-red-400 h-[0.4rem] w-[0.2rem] mr-[0.5px] rounded-md"></div>
+        </div>
+        <div class=" col-span-6 text-sm font-semibold -mt-[2px]"><span class="ml-[2px]">Code</span><span id="Forces" class="">Forces</span>
+        </div>
     </div>
-    <div id="upperCard" class="col-span-9 shadow-md row-start-4 m-3 -mt-10 grid h-[7.4rem] grid-rows-5 rounded-lg">
-      <div class="row-span-2 row-start-3 text-center text-2xl text-white -mt-1">{{.Handle}}</div>
-      <div class="row-span-1 row-start-5 grid grid-cols-2">
-        <div id="maxRating" class="col-span-1 row-span-1 -mt-3 mb-3 ml-[12px] mr-[6px] h-6 rounded-lg bg-opacity-50 text-center text-sm shadow-sm">
-           <div class="m-1 flex items-center justify-center text-xs">
-            <!-- 星形图标 -->
-            <svg t="1731661770446" class="icon mr-1" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="14258" width="12" height="12"><path d="M928.024 508.595l-351.13 254.683L362.98 604.702 148.886 733.977V578.793l225.317-312.316L577.95 519.764l350.074-395.34z" fill="#1296db" p-id="14259" data-spm-anchor-id="a313x.search_index.0.i20.1b813a81J9rHHH" class=""></path><path d="M918.762 834.853H139.625V733.331l225.317-108.398 203.747 145.961L918.762 491.85z" fill="#13227a" p-id="14260" data-spm-anchor-id="a313x.search_index.0.i22.1b813a81J9rHHH" class="selected"></path><path d="M959.159 928.219H64.063V98.125h37.045v787.166h858.051z" fill="#13227a" p-id="14261" data-spm-anchor-id="a313x.search_index.0.i27.1b813a81J9rHHH" class="selected"></path><path d="M580.658 796.245L369.686 628.169 158.642 760.785l-17.659-37.737 230.991-145.15 208.508 166.113 334.054-270.609 21.225 35.183z" fill="#1296db" p-id="14262"></path><path d="M152.112 601.753l-28.68-27.17L360.23 238.944 569.003 494.92 903.52 103.683l26.316 30.213-361.462 422.75L362.245 303.91z" fill="#1296db" p-id="14263" data-spm-anchor-id="a313x.search_index.0.i21.1b813a81J9rHHH" class=""></path></svg>
-             MaxRating {{.MaxRating}}
-          </div>
-        </div>
-        <div id="stars" class="col-span-1 row-span-1 -mt-3 mb-3 ml-[6px] mr-[12px] h-6 rounded-lg bg-opacity-50 text-center text-sm shadow-sm">
-          <div class="m-1 flex items-center justify-center text-xs">
-            <!-- 星形图标 -->
-            <svg t="1731660060145" class="icon mr-1" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5961" width="12" height="12">
-              <path d="M513.137778 864.711111l-250.311111 130.844445c-28.444444 17.066667-62.577778 5.688889-79.644445-22.755556-5.688889-11.377778-5.688889-22.755556-5.688889-34.133333l51.2-278.755556-199.111111-193.422222c-22.755556-22.755556-22.755556-56.888889 0-79.644445 5.688889-11.377778 17.066667-17.066667 28.444445-17.066666l278.755555-39.822222 125.155556-250.311112c11.377778-28.444444 45.511111-39.822222 73.955555-28.444444 11.377778 5.688889 22.755556 17.066667 28.444445 28.444444l125.155555 250.311112 278.755556 39.822222c28.444444 5.688889 51.2 34.133333 45.511111 62.577778 0 11.377778-5.688889 22.755556-17.066667 34.133333l-199.111111 193.422222 45.511111 278.755556c5.688889 28.444444-17.066667 62.577778-45.511111 68.266666-11.377778 0-22.755556 0-34.133333-5.688889l-250.311111-136.533333z" fill="#FEBA60" p-id="5962"></path>
-            </svg>
-            <!-- 星形文本 -->
-            {{.FriendOf}} stars
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="col-span-3 col-start-4 row-start-3 -mt-12 h-[6rem] w-[6rem] items-center rounded-3xl bg-cover shadow-md bg-[url({{.Avatar}})]"></div>
-    <div id="bottomCard" class=" col-span-9 row-start-6 mx-3 mt-[0.4rem] grid h-[10.3rem] grid-cols-2 grid-rows-2 rounded-lg px-3 py-3 text-white shadow-md">
-      <div class="row-span-1 grid grid-rows-5">
-        <div class="row-span-1">Rating</div>
-        <div class="row-span-5 mr-2 mt-5 text-right text-4xl ">{{.Rating}}</div>
-      </div>
-      <div class="row-start-2 grid grid-rows-5">
-        <div class="row-span-1">Level</div>
-        <div id="level" class="row-span-5 mr-2 mt-5 text-right text-4xl">{{.Level}}</div>
-      </div>
-      <div class="row-span-2 grid grid-rows-8">
-        <div class="row-span-1">
-          <div class="ml-1 text-[0.7rem]">solved {{.Solved}} problems</div>
-        </div>
-        <div class="row-span-7 grid grid-rows-4">
-          {{range .SolvedData}}
-          <div class="row-span-1 grid grid-rows-2">
-            <div class="row-span-1 grid grid-cols-2">
-              <div class="col-span-1 ml-1 text-sm">{{.Range}}</div>
-              <div class="col-span-1 mr-1 text-right text-sm">{{printf "%.1f" .Percent}}%</div>
+    <div id="upperCard" class="col-span-9 shadow-sm row-start-4 m-3 -mt-10 grid h-[7.4rem] grid-rows-5 rounded-lg">
+        <div class="row-span-2 row-start-3 text-center text-2xl text-white -mt-1">{{.Handle}}</div>
+        <div class="row-span-1 row-start-5 grid grid-cols-2">
+            <div id="maxRating"
+                 class="col-span-1 row-span-1 -mt-3 mb-3 ml-[12px] mr-[6px] h-6 rounded-lg  text-center text-sm shadow-sm shadow-gray-600">
+                <div class="m-1 flex items-center justify-center text-xs">
+                    <!-- 星形图标 -->
+                    <svg t="1731661770446" class="icon mr-1" viewBox="0 0 1024 1024" version="1.1"
+                         xmlns="http://www.w3.org/2000/svg" p-id="14258" width="12" height="12">
+                        <path d="M928.024 508.595l-351.13 254.683L362.98 604.702 148.886 733.977V578.793l225.317-312.316L577.95 519.764l350.074-395.34z"
+                              fill="#1296db" p-id="14259" data-spm-anchor-id="a313x.search_index.0.i20.1b813a81J9rHHH"
+                              class=""></path>
+                        <path d="M918.762 834.853H139.625V733.331l225.317-108.398 203.747 145.961L918.762 491.85z"
+                              fill="#13227a" p-id="14260" data-spm-anchor-id="a313x.search_index.0.i22.1b813a81J9rHHH"
+                              class="selected"></path>
+                        <path d="M959.159 928.219H64.063V98.125h37.045v787.166h858.051z" fill="#13227a" p-id="14261"
+                              data-spm-anchor-id="a313x.search_index.0.i27.1b813a81J9rHHH" class="selected"></path>
+                        <path d="M580.658 796.245L369.686 628.169 158.642 760.785l-17.659-37.737 230.991-145.15 208.508 166.113 334.054-270.609 21.225 35.183z"
+                              fill="#1296db" p-id="14262"></path>
+                        <path d="M152.112 601.753l-28.68-27.17L360.23 238.944 569.003 494.92 903.52 103.683l26.316 30.213-361.462 422.75L362.245 303.91z"
+                              fill="#1296db" p-id="14263" data-spm-anchor-id="a313x.search_index.0.i21.1b813a81J9rHHH"
+                              class=""></path>
+                    </svg>
+                    MaxRating {{.MaxRating}}
+                </div>
             </div>
-            <div class="line m-2 h-1 rounded-full" style="width:{{.Percent}}%"></div>
-          </div>
-          {{end}}
+            <div id="stars"
+                 class="col-span-1 row-span-1 -mt-3 mb-3 ml-[6px] mr-[12px] h-6 rounded-lg  text-center text-sm shadow-sm shadow-gray-600">
+                <div class="m-1 flex items-center justify-center text-xs">
+                    <!-- 星形图标 -->
+                    <svg t="1731660060145" class="icon mr-1" viewBox="0 0 1024 1024" version="1.1"
+                         xmlns="http://www.w3.org/2000/svg" p-id="5961" width="12" height="12">
+                        <path d="M513.137778 864.711111l-250.311111 130.844445c-28.444444 17.066667-62.577778 5.688889-79.644445-22.755556-5.688889-11.377778-5.688889-22.755556-5.688889-34.133333l51.2-278.755556-199.111111-193.422222c-22.755556-22.755556-22.755556-56.888889 0-79.644445 5.688889-11.377778 17.066667-17.066667 28.444445-17.066666l278.755555-39.822222 125.155556-250.311112c11.377778-28.444444 45.511111-39.822222 73.955555-28.444444 11.377778 5.688889 22.755556 17.066667 28.444445 28.444444l125.155555 250.311112 278.755556 39.822222c28.444444 5.688889 51.2 34.133333 45.511111 62.577778 0 11.377778-5.688889 22.755556-17.066667 34.133333l-199.111111 193.422222 45.511111 278.755556c5.688889 28.444444-17.066667 62.577778-45.511111 68.266666-11.377778 0-22.755556 0-34.133333-5.688889l-250.311111-136.533333z"
+                              fill="#FEBA60" p-id="5962"></path>
+                    </svg>
+                    <!-- 星形文本 -->
+                    {{.FriendOf}} stars
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-    <div id="time" class="row-start-10 row-span-1 col-span-9 text-gray-300 text-[0.6rem] -mb-[0.2rem]">#2024-11-15 11:30:59</div>
-  </div>
+    <div class="col-span-3 col-start-4 row-start-3 -mt-12 h-[6rem] w-[6rem] items-center rounded-3xl bg-cover shadow-sm bg-[url({{.Avatar}})]"></div>
+    <div id="bottomCard"
+         class=" col-span-9 row-start-6 mx-3 mt-[0.4rem] grid h-[10.3rem] grid-cols-2 grid-rows-2 rounded-lg px-3 py-3 text-white shadow-sm">
+        <div class="row-span-1 grid grid-rows-5">
+            <div class="row-span-1">Rating</div>
+            <div class="row-span-5 mr-2 mt-5 text-right text-4xl ">{{.Rating}}</div>
+        </div>
+        <div class="row-start-2 grid grid-rows-5">
+            <div class="row-span-1">Level</div>
+            <div id="level" class="row-span-5 mr-2 mt-5 text-right text-4xl">{{.Level}}</div>
+        </div>
+        <div class="row-span-2 grid grid-rows-8">
+            <div class="row-span-1">
+                <div class="ml-1 text-[0.7rem]">solved {{.Solved}} problems</div>
+            </div>
+            <div class="row-span-7 grid grid-rows-4">
+                {{range .SolvedData}}
+                <div class="row-span-1 grid grid-rows-2">
+                    <div class="row-span-1 grid grid-cols-2">
+                        <div class="col-span-1 ml-1 text-sm">{{.Range}}</div>
+                        <div class="col-span-1 mr-1 text-right text-sm">{{printf "%.1f" .Percent}}%</div>
+                    </div>
+                    <div class="line m-2 h-1 rounded-full" style="width:{{.Percent}}%"></div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    <div id="time" class="row-start-10 row-span-1 col-span-9 text-gray-100 text-[0.6rem] -mb-[0.2rem]">#2024-11-15
+        11:30:59
+    </div>
+</div>
 
 </body>
 <script>
-  document.addEventListener("DOMContentLoaded", function(){
-    const timeElement = document.getElementById("time");
-    const now = new Date();
-    const formattedTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-    timeElement.textContent = formattedTime
-    if("{{.Level}}" == "Specialist") {
-      const levelElement = document.getElementById("level");
-      levelElement.textContent = levelElement.textContent.replace("Specialist", "SpeList");
-      document.getElementById("Forces").classList.add('text-blue-600')
-    } else {
-      document.getElementById("Forces").classList.add('text-blue-300')
+    class ColorTheme {
+        // constructor(background, upperCardBackground, bottomCardBackground, upperCardShadow, bottomCardShadow, maxRatingBackground, starsBackground, lineBackground) {
+        //     this.background = background;
+        //     this.upperCardBackground = upperCardBackground;
+        //     this.bottomCardBackground = bottomCardBackground;
+        //     this.upperCardShadow = upperCardShadow;
+        //     this.bottomCardShadow = bottomCardShadow;
+        //     this.maxRatingBackground = maxRatingBackground;
+        //     this.starsBackground = starsBackground;
+        //     this.lineBackground = lineBackground;
+        // }
+        constructor(c1,c3,c4,cl,cb) {
+            this.background = c1;
+            this.upperCardBackground = c3;
+            this.bottomCardBackground = c3;
+            this.upperCardShadow = c4;
+            this.bottomCardShadow = c4;
+            this.maxRatingBackground = cb;
+            this.starsBackground = cb;
+            this.lineBackground = cl;
+        }
     }
-    if("{{.Level}}" == "Newbie") {
-      document.getElementById("background").classList.add('bg-[#776C6B]')
-      document.getElementById("upperCard").classList.add('bg-[#364A62]')
-      document.getElementById("upperCard").classList.add('shadow-[#364A62]')
-      document.getElementById("bottomCard").classList.add('bg-[#364A62]')
-      document.getElementById("bottomCard").classList.add('shadow-[#364A62]')
-      document.getElementById("maxRating").classList.add('bg-[#91AEB0]')
-      document.getElementById("stars").classList.add('bg-[#E3B386]')
-      document.querySelectorAll('.line').forEach(div => {
-        div.classList.add('bg-[#E3B386]');
-      });
-    }else if("{{.Level}}" == "Pupil") {
-      document.getElementById("background").classList.add('bg-lime-600')
-      document.getElementById("upperCard").classList.add('bg-green-700')
-      document.getElementById("upperCard").classList.add('shadow-green-900')
-      document.getElementById("bottomCard").classList.add('bg-green-700')
-      document.getElementById("bottomCard").classList.add('shadow-green-900')
-      document.getElementById("maxRating").classList.add('bg-[#FFC693]')
-      document.getElementById("stars").classList.add('bg-[#FFC693]')
-      document.querySelectorAll('.line').forEach(div => {
-        div.classList.add('bg-[#F0732A]');
-      });
-    } else if("{{.Level}}" == "Specialist") {
-      document.getElementById("background").classList.add('bg-[#86C7CC]')
-      document.getElementById("upperCard").classList.add('bg-[#41A8A8]')
-      document.getElementById("upperCard").classList.add('shadow-[#41A8A8]')
-      document.getElementById("bottomCard").classList.add('bg-[#41A8A8]')
-      document.getElementById("bottomCard").classList.add('shadow-[#41A8A8]')
-      document.getElementById("maxRating").classList.add('bg-[#86C7CC]')
-      document.getElementById("stars").classList.add('bg-[#86C7CC]')
-      document.querySelectorAll('.line').forEach(div => {
-        div.classList.add('bg-[#E2A388]');
-      });
-    } else if("{{.Level}}" == "Expert") {
-      document.getElementById("background").classList.add('bg-[#464879]')
-      document.getElementById("upperCard").classList.add('bg-[#5D7DB3]')
-      document.getElementById("upperCard").classList.add('shadow-[#5D7DB3]')
-      document.getElementById("bottomCard").classList.add('bg-[#5D7DB3]')
-      document.getElementById("bottomCard").classList.add('shadow-[#5D7DB3]')
-      document.getElementById("maxRating").classList.add('bg-[#E1E4EA]')
-      document.getElementById("stars").classList.add('bg-[#E1E4EA]')
-      document.querySelectorAll('.line').forEach(div => {
-        div.classList.add('bg-[#E1E4EA]');
-      });
-    } else if("{{.Level}}" == "CM") {
-      document.getElementById("background").classList.add('bg-[#84709B]')
-      document.getElementById("upperCard").classList.add('bg-[#464879]')
-      document.getElementById("upperCard").classList.add('shadow-[#464879]')
-      document.getElementById("bottomCard").classList.add('bg-[#464879]')
-      document.getElementById("bottomCard").classList.add('shadow-[#464879]')
-      document.getElementById("maxRating").classList.add('bg-[#B6CAD7]')
-      document.getElementById("stars").classList.add('bg-[#B6CAD7]')
-      document.querySelectorAll('.line').forEach(div => {
-        div.classList.add('bg-[#5D7DB3]');
-      });
-    } else if("{{.Level}}" == "Master" || "{{.Level}}" == "IM") {
-      document.getElementById("background").classList.add('bg-[#FFD253]')
-      document.getElementById("upperCard").classList.add('bg-[#F3AF27]')
-      document.getElementById("upperCard").classList.add('shadow-[#F3AF27]')
-      document.getElementById("bottomCard").classList.add('bg-[#F3AF27]')
-      document.getElementById("bottomCard").classList.add('shadow-[#F3AF27]')
-      document.getElementById("maxRating").classList.add('bg-[#D5E2D8]')
-      document.getElementById("stars").classList.add('bg-[#D5E2D8]')
-      document.querySelectorAll('.line').forEach(div => {
-        div.classList.add('bg-[#146E57]');
-      });
-    } else if("{{.Level}}" == "GM" || "{{.Level}}" == "IGM" || "{{.Level}}" == "LGM" || "{{.Level}}" == "Tourist") {
-      document.getElementById("background").classList.add('bg-[#DC8E75]')
-      document.getElementById("upperCard").classList.add('bg-[#B5594B]')
-      document.getElementById("upperCard").classList.add('shadow-[#B5594B]')
-      document.getElementById("bottomCard").classList.add('bg-[#B5594B]')
-      document.getElementById("bottomCard").classList.add('shadow-[#B5594B]')
-      document.getElementById("maxRating").classList.add('bg-[#E3B386]')
-      document.getElementById("stars").classList.add('bg-[#E3B386]')
-      document.querySelectorAll('.line').forEach(div => {
-        div.classList.add('bg-[#364A62]');
-      });
-    } 
-  });
+
+    // new ColorTheme("#", "#", "#", "#", "#", "#", "#", "#"),
+    // 2-6-4
+    // new ColorTheme("#", "#", "#", "#", "#"),
+    const colorMap = {
+        "Newbie":     new ColorTheme("gray-400", "gray-500", "gray-800", "gray-100", "gray-600"),
+        "Pupil":      new ColorTheme("lime-400", "lime-500", "lime-800", "lime-100", "lime-600"),
+        "Specialist": new ColorTheme("cyan-400", "cyan-500", "cyan-800", "cyan-100", "cyan-600"),
+        "Expert":     new ColorTheme("blue-400", "blue-500", "blue-800", "blue-100", "blue-600"),
+        "CM":         new ColorTheme("indigo-400", "indigo-500", "indigo-800", "indigo-100", "indigo-600"),
+        "Master":     new ColorTheme("[#FFA726]", "[#FF9800]", "[#EF6C00]", "[#FFE0B2]", "[#FB8C00]"),
+        "IM":         new ColorTheme("[#FFA726]", "[#FF9800]", "[#EF6C00]", "[#FFE0B2]", "[#FB8C00]"),
+        "GM":         new ColorTheme("rose-400", "rose-500", "rose-800", "rose-100", "rose-600"),
+        "IGM":        new ColorTheme("red-400", "red-500", "red-800", "red-100", "red-600"),
+        "LGM":        new ColorTheme("red-400", "red-500", "red-800", "red-100", "red-600"),
+        "Tourist":    new ColorTheme("red-400", "red-500", "red-800", "red-100", "red-600"),
+    }
+// 直接点运行就可以生成图片，在下面看（文件管理器那里，稍等，我搜一下配色表
+// 怎么只有四个空给我填？=> 你直接改构造函数
+// 你为啥不复制 => 因为配色表在手机上
+// 你为啥不发到电脑上 => 先看我表演//
+//我说的是生成的图片没有线，感觉好难用） => 你都没给他设置颜色，怎么会有呢
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const timeElement = document.getElementById("time");
+        const now = new Date();
+        timeElement.textContent = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+        if ("{{.Level}}" === "Specialist") {
+            const levelElement = document.getElementById("level");
+            levelElement.textContent = levelElement.textContent.replace("Specialist", "SpeList");
+        }
+        document.getElementById("Forces").classList.add('text-blue-600')
+
+        const thisColorTheme = colorMap["{{.Level}}"]
+        document.getElementById("background").classList.add('bg-' + thisColorTheme.background + '')
+        document.getElementById("upperCard").classList.add('bg-' + thisColorTheme.upperCardBackground + '')
+        document.getElementById("upperCard").classList.add('shadow-' + thisColorTheme.upperCardShadow + '')
+        document.getElementById("bottomCard").classList.add('bg-' + thisColorTheme.bottomCardBackground + '')
+        document.getElementById("bottomCard").classList.add('shadow-' + thisColorTheme.bottomCardShadow + '')
+        document.getElementById("maxRating").classList.add('bg-' + thisColorTheme.maxRatingBackground + '')
+        document.getElementById("stars").classList.add('bg-' + thisColorTheme.starsBackground + '')
+        document.querySelectorAll('.line').forEach(div => {div.classList.add('bg-' + thisColorTheme.lineBackground + '');});
+    });
 </script>
 </html>

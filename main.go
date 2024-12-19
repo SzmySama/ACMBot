@@ -1,16 +1,19 @@
 package main
 
 import (
-	"github.com/YourSuzumiya/ACMBot/app/bot"
+	_ "github.com/YourSuzumiya/ACMBot/app/bot/platforms/qq"
 	"github.com/YourSuzumiya/ACMBot/app/model/db"
-	_ "github.com/YourSuzumiya/ACMBot/app/utils/logger"
 	"github.com/sirupsen/logrus"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
-	err := db.MigrateCodeforces()
-	if err != nil {
+	if err := db.MigrateAll(); err != nil {
 		logrus.Fatal(err)
 	}
-	bot.Start()
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	<-sigChan
 }

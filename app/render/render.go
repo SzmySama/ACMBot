@@ -18,6 +18,7 @@ var (
 	codeforcesUserProfileV1Template *template.Template
 	codeforcesUserProfileV2Template *template.Template
 	codeforcesRatingChangeTemplate  *template.Template
+	qqGroupRankTemplate             *template.Template
 )
 
 type Error struct {
@@ -33,6 +34,7 @@ const (
 	CodeforcesUserProfileV1TemplatePath = templatePath + "codeforces_profile_v1.html"
 	CodeforcesUserProfileV2TemplatePath = templatePath + "codeforces_profile_v2.html"
 	CodeforcesRatingChangesTemplatePath = templatePath + "codeforces_rating_change.html"
+	QQGroupRankTemplatePath             = templatePath + "qq_group_rank.html"
 )
 
 type HtmlOptions struct {
@@ -64,7 +66,6 @@ func initDriver() {
 	if err != nil {
 		log.Fatalf("Failed to launch chromium: %v", err)
 	}
-	log.Info(_bowers)
 }
 
 func initTemplates() {
@@ -73,12 +74,12 @@ func initTemplates() {
 		log.Fatalf("Failed to get exec info: %v", err)
 	}
 	fullTemplatePath = path.Dir(execPath + "/" + templatePath)
-	log.Infof(fullTemplatePath)
 
 	templateMap := map[**template.Template]string{
 		&codeforcesUserProfileV1Template: CodeforcesUserProfileV1TemplatePath,
 		&codeforcesUserProfileV2Template: CodeforcesUserProfileV2TemplatePath,
 		&codeforcesRatingChangeTemplate:  CodeforcesRatingChangesTemplatePath,
+		&qqGroupRankTemplate:             QQGroupRankTemplatePath,
 	}
 
 	for k, v := range templateMap {
@@ -87,10 +88,6 @@ func initTemplates() {
 			log.Fatalf("Failed to load template %s: %v", v, err)
 		}
 	}
-}
-
-func ShutdownBowers() error {
-	return _playwright.Stop()
 }
 
 func GetNewPage(opt playwright.BrowserNewPageOptions) (playwright.Page, error) {
