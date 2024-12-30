@@ -4,7 +4,7 @@
 ![Badge](https://img.shields.io/badge/go-%3E%3D1.20-30dff3?logo=go)
 
 ## 项目介绍
-这是一个使用`GoLang`开发的QQBot项目，主要提供比赛查询，个人信息查询，群友排行等功能
+这是一个使用Go语言，基于onebot11协议开发的QQBot项目，主要提供比赛查询，个人信息查询，群友排行等功能
 
 ## TODO
 ### 个人信息展示
