@@ -12,7 +12,7 @@ type Context struct {
 type Invoker interface {
 	Send(message message.Message)
 	SendError(err error)
-	Params() message.Message
+	Params() []string
 	GetCallerInfo() CallerInfo
 }
 

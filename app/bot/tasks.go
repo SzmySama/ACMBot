@@ -20,11 +20,7 @@ func getHandlerFromParams(ctx *Context) error {
 	params := ctx.Params()
 	var handles []string
 
-	for _, param := range params {
-		handle, ok := param.Text()
-		if !ok {
-			continue
-		}
+	for _, handle := range params {
 		for _, c := range handle {
 			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '.' || c == '-') {
 				return errs.ErrIllegalHandle
@@ -49,7 +45,7 @@ func getCodeforcesUserByHandle(ctx *Context) error {
 	}
 
 	if len(handles) > 1 {
-		ctx.Send(message.Message{message.Text("太多handle惹，我只查询`" + handles[0] + "`的哦")})
+		ctx.Send(message.Text("太多handle惹，我只查询`" + handles[0] + "`的哦"))
 	}
 
 	user, err := manager.GetUpdatedCodeforcesUser(handles[0])
@@ -112,7 +108,7 @@ func getRaceFromProvider(ctx *Context) error {
 // bindCodeforcesUser []string -> nil
 func bindCodeforcesUser(ctx *Context) error {
 	if ctx.Platform != PlatformQQ {
-		ctx.Send(message.Message{message.Error(errs.ErrBadPlatform)})
+		ctx.Send(message.Text(errs.ErrBadPlatform.Error()))
 		return nil
 	}
 
@@ -122,14 +118,14 @@ func bindCodeforcesUser(ctx *Context) error {
 	}
 
 	if len(handles) != 1 {
-		ctx.Send(message.Message{message.Error(errs.ErrImDedicated)})
+		ctx.Send(message.Text(errs.ErrImDedicated.Error()))
 		return nil
 	}
 
 	caller := ctx.GetCallerInfo()
 
 	if caller.Group.ID == 0 {
-		ctx.Send(message.Message{message.Error(errs.ErrGroupOnly)})
+		ctx.Send(message.Text(errs.ErrGroupOnly.Error()))
 		return nil
 	}
 
@@ -144,10 +140,7 @@ func bindCodeforcesUser(ctx *Context) error {
 		return err
 	}
 
-	ctx.Send(message.Message{
-		message.At(caller.ID),
-		message.Text("绑定成功 " + caller.NickName + " -> " + handles[0]),
-	})
+	ctx.Send(message.Text("绑定成功 " + caller.NickName + " -> " + handles[0]))
 
 	ctx.StepValue = nil
 
@@ -157,14 +150,14 @@ func bindCodeforcesUser(ctx *Context) error {
 // qqGroupRankHandler nil -> nil
 func qqGroupRank(ctx *Context) error {
 	if ctx.Platform != PlatformQQ {
-		ctx.Send(message.Message{message.Error(errs.ErrBadPlatform)})
+		ctx.Send(message.Text(errs.ErrBadPlatform.Error()))
 		return nil
 	}
 
 	caller := ctx.GetCallerInfo()
 
 	if caller.Group.ID == 0 {
-		ctx.Send(message.Message{message.Error(errs.ErrGroupOnly)})
+		ctx.Send(message.Text(errs.ErrGroupOnly.Error()))
 		return nil
 	}
 
@@ -183,9 +176,7 @@ func qqGroupRank(ctx *Context) error {
 		msg += fmt.Sprintf("#%d %s %d\n", user.RankInGroup, user.QName, user.CodeforcesRating)
 	}
 
-	ctx.Send(message.Message{
-		message.Text(msg),
-	})
+	ctx.Send(message.Text(msg))
 
 	ctx.StepValue = nil
 
@@ -199,8 +190,7 @@ func sendPicture(ctx *Context) error {
 		return errs.NewInternalError("错误的参数类型")
 	}
 
-	result := message.Message{message.ImageBytes(pic)}
-	ctx.Send(result)
+	ctx.Send(message.Image(pic))
 	ctx.StepValue = nil
 	return nil
 }
@@ -213,15 +203,11 @@ func sendRace(ctx *Context) error {
 	}
 
 	if len(race) == 0 {
-		ctx.Send(message.Message{message.Text("没有获取到相关数据...")})
+		ctx.Send(message.Text("没有获取到相关数据..."))
 		return nil
 	}
 
-	var result message.Message
-	for _, v := range race {
-		result = append(result, message.MixNode(message.Text(v.String())))
-	}
-	ctx.Send(result)
+	ctx.Send(message.Races(race))
 	ctx.StepValue = nil
 	return nil
 }
@@ -231,7 +217,7 @@ func sendText(ctx *Context) error {
 	if !ok {
 		return errs.NewInternalError("错误的参数类型")
 	}
-	ctx.Send(message.Message{message.Text(text)})
+	ctx.Send(message.Text(text))
 	ctx.StepValue = nil
 	return nil
 }
