@@ -7,10 +7,8 @@ import (
 	"github.com/YourSuzumiya/ACMBot/app/bot"
 	myMsg "github.com/YourSuzumiya/ACMBot/app/bot/message"
 	"github.com/YourSuzumiya/ACMBot/app/errs"
-	"github.com/sirupsen/logrus"
 	zero "github.com/wdvxdr1123/ZeroBot"
 	"github.com/wdvxdr1123/ZeroBot/driver"
-	zMsg "github.com/wdvxdr1123/ZeroBot/message"
 	"strings"
 	"time"
 )
@@ -68,7 +66,7 @@ func (c *qqContext) GetContextType() bot.Platform {
 }
 
 func (c *qqContext) Send(msg myMsg.Message) {
-	c.zCtx.Send(msgToZeroMsg(msg))
+	c.zCtx.Send(msg.ToZeroMessage())
 }
 
 func (c *qqContext) SendError(err error) {
@@ -80,25 +78,6 @@ func (c *qqContext) SendError(err error) {
 func (c *qqContext) Params() []string {
 	argStr := c.zCtx.State["args"].(string)
 	return strings.Fields(argStr)
-}
-
-func msgToZeroMsg(msg myMsg.Message) zMsg.Message {
-	switch msg := msg.(type) {
-	case myMsg.Text:
-		return zMsg.Message{zMsg.Text(msg)}
-	case myMsg.Image:
-		return zMsg.Message{zMsg.ImageBytes(msg)}
-	case myMsg.Races:
-		var res zMsg.Message
-		for _, race := range msg {
-			res = append(res, zMsg.CustomNode("", 0, race.String()))
-		}
-		return res
-	default:
-		logrus.Error("unknown msg type")
-		return zMsg.Message{}
-
-	}
 }
 
 var (
@@ -151,8 +130,8 @@ func init() {
 		zeroHandler := func(ctx *zero.Ctx) {
 			qCtx := newQQContext(withZeroCtx(ctx))
 			c := &bot.Context{
-				Invoker:  qCtx,
-				Platform: qCtx.Platform,
+				ApiCaller: qCtx,
+				Platform:  qCtx.Platform,
 			}
 			err := handler(c)
 			if err == nil {

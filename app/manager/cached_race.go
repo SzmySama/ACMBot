@@ -87,7 +87,7 @@ var (
 )
 
 func init() {
-	go updater_.start()
+	//go updater_.start()
 }
 
 func GetCachedRacesByResource(resource string) model.RaceProvider {

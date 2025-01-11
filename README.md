@@ -31,6 +31,7 @@ go run ./main.go
 ```
 第一次启动会自动生成配置文件，填写好相关内容之后启动即可正常运行
 
-## 与NapCat联通
+## 提示
+本分支基于zerobot进行了二次开发，补了部分Gensokyo扩展的api，并且用了这部分api
 
-配置文件(onebot.json)内开启websocket，地址类似于`ws://localhost:8088`
+所以它和主线完全不兼容，并且需要搭配gensokyo使用
