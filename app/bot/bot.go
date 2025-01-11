@@ -11,15 +11,13 @@ var (
 	CommandPrefix = app.GetConfig().Bot.CommandPrefix
 
 	MenuText = `以下是功能列表：所有命令都要加上前缀` + "`" + CommandPrefix + "`" + `哦🥰
+0. help(或菜单)，输出本消息
 
-1.cf [username]，用于查询codeforces用户的基本信息
+1. cf [username]，用于查询codeforces用户的基本信息
 
-2.rating(或rt) [username]，用于查询codeforces用户的rating变化曲线
+2. rating(或rt) [username]，用于查询codeforces用户的rating变化曲线
 
-3.近期[比赛,atc,nk,lg,cf]，用于查询近期的比赛数据，数据来源于clist.by
-
-项目地址https://github.com/YourSuzumiya/ACMBot，喜欢可以加个Star支持一下
-Bot可以直接拉到自己群里用，bot会自动同意好友请求和加群邀请呢`
+3. 近期[比赛,atc,nk,lg,cf]，用于查询近期的比赛数据，数据来源于clist.by`
 )
 
 type CommandHandler struct {
@@ -36,7 +34,7 @@ var (
 		{[]string{"近期lg"}, raceHandler(manager.GetCachedRacesByResource(model.ResourceLuogu))},
 
 		{[]string{"cf"}, codeforcesProfileHandler},
-		{[]string{"rt"}, codeforcesRatingHandler},
+		{[]string{"rt", "rating"}, codeforcesRatingHandler},
 
 		{[]string{"help", "菜单"}, textHandler(MenuText)},
 	}
