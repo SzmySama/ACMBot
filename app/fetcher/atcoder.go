@@ -24,10 +24,8 @@ const (
 	httpTimeout = 30 * time.Second
 )
 
-var (
-	// 全局限流器，所有 API 请求共享
-	apiLimiter = rate.NewLimiter(rate.Every(rateLimit), 1)
-)
+// 全局限流器，所有 API 请求共享
+var apiLimiter = rate.NewLimiter(rate.Every(rateLimit), 1)
 
 type Config struct {
 	BaseURL     string
@@ -98,7 +96,6 @@ func (e *AtcoderError) Error() string {
 	return fmt.Sprintf("atcoder error: status=%d, message=%s", e.StatusCode, e.Message)
 }
 
-
 // API 相关函数
 func fetchAPI[T any](suffix string, args map[string]any) (*T, error) {
 	requestURL := apiBaseURL + "/" + suffix + "?"
@@ -134,18 +131,35 @@ func fetchAPI[T any](suffix string, args map[string]any) (*T, error) {
 	return &res, nil
 }
 
-func FetchAtcoderUserSubmissionList(handle string, from int64) (*[]AtcoderUserSubmission, error) {
+func fetchAtcoderUserSubmissionListFrom(handle string, from int64) (*[]AtcoderUserSubmission, error) {
 	return fetchAPI[[]AtcoderUserSubmission]("atcoder-api/v3/user/submissions", map[string]any{
 		"user":        handle,
 		"from_second": from,
 	})
 }
 
+func FetchAtcoderUserSubmissionList(handle string) (*[]AtcoderUserSubmission, error) {
+	const maxCap = 500
+	submission := make([]AtcoderUserSubmission, 0)
+	var now int64 = 0
+	for true {
+		nextSubmission, err := fetchAtcoderUserSubmissionListFrom(handle, now)
+		if err != nil {
+			return nil, err
+		}
+		submission = append(submission, *nextSubmission...)
+		if len(*nextSubmission) < maxCap {
+			break
+		}
+		now = (*nextSubmission)[len(*nextSubmission)-1].SubmissionTime
+	}
+	return &submission, nil
+}
+
 func FetchAtcoderContestList() (*[]AtcoderContest, error) {
 	return fetchAPI[[]AtcoderContest]("resources/contests.json", nil)
 }
 
-// 独立的网页爬虫函数
 func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
 	logger := log.WithFields(log.Fields{
 		"handle": handle,
@@ -172,7 +186,7 @@ func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
 			if err != nil {
 				log.Infof("Failed to convert rating to uint: %v", err)
 				user = nil
-				e = fmt.Errorf("Parse error: %v", err)
+				e = fmt.Errorf("parse error: %v", err)
 			}
 			user.IsProvisional = td.Find("span").HasClass("bold small")
 		case "Highest Rating":
@@ -183,7 +197,7 @@ func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
 					if err != nil {
 						log.Infof("Failed to convert highest rating to uint: %v", err)
 						user = nil
-						e = fmt.Errorf("Parse error: %v", err)
+						e = fmt.Errorf("parse error: %v", err)
 					}
 				case 2:
 					user.Dan = s.Text()
@@ -196,7 +210,7 @@ func FetchAtcoderUser(handle string) (*AtcoderUser, error) {
 			if err != nil {
 				log.Infof("Failed to convert rated matches to uint: %v", err)
 				user = nil
-				e = fmt.Errorf("Parse error: %v", err)
+				e = fmt.Errorf("parse error: %v", err)
 			}
 		case "Last Competed":
 			user.LastCompeted = h.ChildText("td")

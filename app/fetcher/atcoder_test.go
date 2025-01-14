@@ -8,13 +8,13 @@ import (
 )
 
 var (
-	existedHandles   = []string{"tourist", "rng_58", "chokudai", "gori", "petr", "jiangly"}
+	existedHandles   = []string{"tourist", "rng_58", "chokudai", "gori", "petr", "jiangly", "keep_running"}
 	unexistedHandles = []string{"dongxuelian", "daijiangqi", "aminuosi"}
 )
 
 func TestAtcoderUserSubmissionsFromEpoch(t *testing.T) {
 	for _, handle := range existedHandles {
-		subs, err := FetchAtcoderUserSubmissionList(handle, time.Unix(0, 0).Unix())
+		subs, err := fetchAtcoderUserSubmissionListFrom(handle, time.Unix(0, 0).Unix())
 		if err != nil {
 			t.Error(err)
 		} else if len(*subs) == 0 {
@@ -23,7 +23,7 @@ func TestAtcoderUserSubmissionsFromEpoch(t *testing.T) {
 	}
 
 	for _, handle := range unexistedHandles {
-		subs, err := FetchAtcoderUserSubmissionList(handle, time.Unix(0, 0).Unix())
+		subs, err := fetchAtcoderUserSubmissionListFrom(handle, time.Unix(0, 0).Unix())
 		if err != nil {
 			t.Error(err)
 		} else if len(*subs) != 0 {
@@ -34,7 +34,7 @@ func TestAtcoderUserSubmissionsFromEpoch(t *testing.T) {
 
 func TestAtcoderUserSubmissionsFromNow(t *testing.T) {
 	for _, handle := range existedHandles {
-		subs, err := FetchAtcoderUserSubmissionList(handle, time.Now().Unix())
+		subs, err := fetchAtcoderUserSubmissionListFrom(handle, time.Now().Unix())
 		if err != nil {
 			t.Error(err)
 		} else if len(*subs) != 0 {
@@ -43,11 +43,28 @@ func TestAtcoderUserSubmissionsFromNow(t *testing.T) {
 	}
 
 	for _, handle := range unexistedHandles {
-		subs, err := FetchAtcoderUserSubmissionList(handle, time.Now().Unix())
+		subs, err := fetchAtcoderUserSubmissionListFrom(handle, time.Now().Unix())
 		if err != nil {
 			t.Error(err)
 		} else if len(*subs) != 0 {
 			t.Error("User submission length should 0 from now!")
+		}
+	}
+}
+
+func TestAtcoderUserSubumissions(t *testing.T) {
+	const maxCap = 500
+	for _, handle := range existedHandles {
+		subsFromEpoch, err := fetchAtcoderUserSubmissionListFrom(handle, time.Unix(0, 0).Unix())
+		if err != nil {
+			t.Error(err)
+		}
+		subs, err := FetchAtcoderUserSubmissionList(handle)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(*subs) <= maxCap && len(*subs) != len(*subsFromEpoch) {
+			t.Error("User submission length(Less than maxCap)should be equal to the length from epoch!")
 		}
 	}
 }
