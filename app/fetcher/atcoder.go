@@ -79,6 +79,11 @@ type AtcoderUserSubmission struct {
 	ExecutionTime  int     `json:"execution_time"`
 }
 
+type AtcoderProblem struct {
+	Id    string `json:"id"`
+	Point float64    `json:"point"`
+}
+
 type AtcoderContest struct {
 	Id             string `json:"id"`                 // 比赛ID
 	StartTime      int64  `json:"start_epoch_second"` // 开始时间（UNIX时间戳）
@@ -142,7 +147,7 @@ func FetchAtcoderUserSubmissionList(handle string) (*[]AtcoderUserSubmission, er
 	const maxCap = 500
 	submission := make([]AtcoderUserSubmission, 0)
 	var now int64 = 0
-	for true {
+	for {
 		nextSubmission, err := fetchAtcoderUserSubmissionListFrom(handle, now)
 		if err != nil {
 			return nil, err
@@ -154,6 +159,10 @@ func FetchAtcoderUserSubmissionList(handle string) (*[]AtcoderUserSubmission, er
 		now = (*nextSubmission)[len(*nextSubmission)-1].SubmissionTime
 	}
 	return &submission, nil
+}
+
+func FetchAtcoderProblemList() (*[]AtcoderProblem, error) {
+	return fetchAPI[[]AtcoderProblem]("resources/merged-problems.json", nil)
 }
 
 func FetchAtcoderContestList() (*[]AtcoderContest, error) {

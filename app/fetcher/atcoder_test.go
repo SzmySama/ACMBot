@@ -69,6 +69,15 @@ func TestAtcoderUserSubumissions(t *testing.T) {
 	}
 }
 
+func TestAtcoderProblems(t *testing.T) {
+	problems, err := FetchAtcoderProblemList()
+	if err != nil {
+		t.Error(err)
+	} else if len(*problems) == 0 {
+		t.Error("Problem list should not be empty!")
+	}
+}
+
 func TestAtcoderContests(t *testing.T) {
 	contests, err := FetchAtcoderContestList()
 	if err != nil {
