@@ -66,7 +66,7 @@ type AtcoderUser struct {
 	LastCompeted     string
 }
 
-type AtcoderUserSubmission struct {
+type AtcoderSubmission struct {
 	SubmissionId   uint    `json:"id"`
 	SubmissionTime int64   `json:"epoch_second"` // 提交时间（UNIX时间戳）
 	ProblemId      string  `json:"problem_id"`
@@ -136,16 +136,16 @@ func fetchAPI[T any](suffix string, args map[string]any) (*T, error) {
 	return &res, nil
 }
 
-func fetchAtcoderUserSubmissionListFrom(handle string, from int64) (*[]AtcoderUserSubmission, error) {
-	return fetchAPI[[]AtcoderUserSubmission]("atcoder-api/v3/user/submissions", map[string]any{
+func fetchAtcoderUserSubmissionListFrom(handle string, from int64) (*[]AtcoderSubmission, error) {
+	return fetchAPI[[]AtcoderSubmission]("atcoder-api/v3/user/submissions", map[string]any{
 		"user":        handle,
 		"from_second": from,
 	})
 }
 
-func FetchAtcoderUserSubmissionList(handle string) (*[]AtcoderUserSubmission, error) {
+func FetchAtcoderUserSubmissionList(handle string) (*[]AtcoderSubmission, error) {
 	const maxCap = 500
-	submission := make([]AtcoderUserSubmission, 0)
+	submission := make([]AtcoderSubmission, 0)
 	var now int64 = 0
 	for {
 		nextSubmission, err := fetchAtcoderUserSubmissionListFrom(handle, now)
