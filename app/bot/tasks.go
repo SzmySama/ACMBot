@@ -109,6 +109,47 @@ func getRaceFromProvider(ctx *Context) error {
 	return nil
 }
 
+
+// getAtcoderUserByHandle []string -> *manager.AtcoderUser
+func getAtcoderUserByHandle(ctx *Context) error {
+	handles, ok := ctx.StepValue.([]string)
+	if !ok {
+		return errs.NewInternalError("错误的参数类型")
+	}
+
+	if len(handles) == 0 {
+		return errs.ErrNoHandle
+	}
+
+	if len(handles) > 1 {
+		ctx.Send(message.Message{message.Text("太多handle惹，我只查询`" + handles[0] + "`的哦")})
+	}
+
+	user, err := manager.GetUpdatedAtcoderUser(handles[0])
+	if err != nil {
+		return err
+	}
+
+	ctx.StepValue = user
+	return nil
+}
+
+// getRenderedAtcoderUserProfile *manager.AtcoderUser -> []byte
+func getRenderedAtcoderUserProfile(ctx *Context) error {
+	user, ok := ctx.StepValue.(*manager.AtcoderUser)
+	if !ok {
+		return errs.NewInternalError("错误的参数类型")
+	}
+
+	pic, err := user.ToRenderProfile().ToImage()
+	if err != nil {
+		return err
+	}
+
+	ctx.StepValue = pic
+	return nil
+}
+
 // bindCodeforcesUser []string -> nil
 func bindCodeforcesUser(ctx *Context) error {
 	if ctx.Platform != PlatformQQ {
