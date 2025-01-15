@@ -136,30 +136,30 @@ func fetchAPI[T any](suffix string, args map[string]any) (*T, error) {
 	return &res, nil
 }
 
-func fetchAtcoderUserSubmissionListFrom(handle string, from int64) (*[]AtcoderSubmission, error) {
+func FetchAtcoderSubmissionListFrom(handle string, from int64) (*[]AtcoderSubmission, error) {
 	return fetchAPI[[]AtcoderSubmission]("atcoder-api/v3/user/submissions", map[string]any{
 		"user":        handle,
 		"from_second": from,
 	})
 }
 
-func FetchAtcoderUserSubmissionList(handle string) (*[]AtcoderSubmission, error) {
-	const maxCap = 500
-	submission := make([]AtcoderSubmission, 0)
-	var now int64 = 0
-	for {
-		nextSubmission, err := fetchAtcoderUserSubmissionListFrom(handle, now)
-		if err != nil {
-			return nil, err
-		}
-		submission = append(submission, *nextSubmission...)
-		if len(*nextSubmission) < maxCap {
-			break
-		}
-		now = (*nextSubmission)[len(*nextSubmission)-1].SubmissionTime
-	}
-	return &submission, nil
-}
+// func FetchAtcoderSubmissionList(handle string) (*[]AtcoderSubmission, error) {
+// 	const maxCap = 500
+// 	submission := make([]AtcoderSubmission, 0)
+// 	var now int64 = 0
+// 	for {
+// 		nextSubmission, err := FetchAtcoderSubmissionListFrom(handle, now)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		submission = append(submission, *nextSubmission...)
+// 		if len(*nextSubmission) < maxCap {
+// 			break
+// 		}
+// 		now = (*nextSubmission)[len(*nextSubmission)-1].SubmissionTime
+// 	}
+// 	return &submission, nil
+// }
 
 func FetchAtcoderProblemList() (*[]AtcoderProblem, error) {
 	return fetchAPI[[]AtcoderProblem]("resources/merged-problems.json", nil)
