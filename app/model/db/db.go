@@ -23,6 +23,9 @@ func MigrateAll() (err error) {
 	if err = MigrateCodeforces(); err != nil {
 		return err
 	}
+	if err = MigrateAtcoder(); err != nil {
+		return err
+	}
 	if err = MigrateQQ(); err != nil {
 		return err
 	}
