@@ -7,7 +7,7 @@ import (
 )
 
 func keyAtcoderUser(handle string) string {
-	return "codeforces_user:" + strings.ToLower(handle)
+	return "atcoder_user:" + strings.ToLower(handle)
 }
 
 func GetAtcoderUser(handle string) (string, error) {
