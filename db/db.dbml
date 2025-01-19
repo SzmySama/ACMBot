@@ -1,0 +1,19 @@
+Table CodeforcesUser {
+    id int [pk, increment]
+    handle varchar
+}
+
+Table CodeforcesSubmission {
+    id int [pk]
+    codeforces_user_id int
+    passed bool
+    at time
+
+}
+
+Table Problem {
+    id varchar [pk]
+    
+}
+
+Ref: CodeforcesSubmission.codeforces_user_id > CodeforcesUser.id

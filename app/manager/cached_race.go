@@ -15,7 +15,7 @@ const updateExp = 5 * time.Hour
 var AllResource = model.AllRaceResource
 
 type CachedRace struct {
-	source   string
+	source   model.Resource
 	provider model.RaceProvider
 	err      error
 }
@@ -36,7 +36,7 @@ func (r *CachedRace) Get() ([]model.Race, error) {
 }
 
 type updater struct {
-	AllCachedRace map[string]*CachedRace
+	AllCachedRace map[model.Resource]*CachedRace
 	UpdateTicker  *time.Ticker
 }
 
@@ -49,7 +49,7 @@ func (r *updater) update() {
 	}
 }
 
-func (r *updater) get(resource string) ([]model.Race, error) {
+func (r *updater) get(resource model.Resource) ([]model.Race, error) {
 	race, ok := r.AllCachedRace[resource]
 	if !ok {
 		return nil, fmt.Errorf("%s not found", resource)
@@ -64,9 +64,9 @@ func (r *updater) start() {
 	}
 }
 
-func newUpdater(rp map[string]model.RaceProvider, t *time.Ticker) *updater {
+func newUpdater(rp map[model.Resource]model.RaceProvider, t *time.Ticker) *updater {
 	result := &updater{
-		AllCachedRace: make(map[string]*CachedRace),
+		AllCachedRace: make(map[model.Resource]*CachedRace),
 		UpdateTicker:  t,
 	}
 	for source, provider := range rp {
@@ -76,30 +76,30 @@ func newUpdater(rp map[string]model.RaceProvider, t *time.Ticker) *updater {
 }
 
 var (
-	raceAndProvider = map[string]model.RaceProvider{
+	raceAndProvider = map[model.Resource]model.RaceProvider{
 		model.ResourceCodeforces: fetcher.FetchClistCodeforcesContests,
 		model.ResourceAtcoder:    fetcher.FetchClistAtcoderContests,
 		model.ResourceLeetcode:   fetcher.FetchClistLeetcodeContests,
 		model.ResourceLuogu:      fetcher.FetchClistLuoguContests,
 		model.ResourceNowcoder:   fetcher.FetchClistNowcoderContests,
 	}
-	updater_ = newUpdater(raceAndProvider, time.NewTicker(updateExp))
+	defaultUpdater = newUpdater(raceAndProvider, time.NewTicker(updateExp))
 )
 
 func init() {
-	//go updater_.start()
+	go defaultUpdater.start()
 }
 
-func GetCachedRacesByResource(resource string) model.RaceProvider {
+func GetCachedRacesByResource(resource model.Resource) model.RaceProvider {
 	return func() ([]model.Race, error) {
-		return updater_.get(resource)
+		return defaultUpdater.get(resource)
 	}
 }
 
 func GetAllCachedRaces() ([]model.Race, error) {
 	var results []model.Race
 	for _, s := range AllResource {
-		races, err := updater_.get(s)
+		races, err := defaultUpdater.get(s)
 		if err != nil {
 			continue
 		}

@@ -6,18 +6,32 @@ import (
 	"time"
 )
 
+type Resource string
+
 const (
-	ResourceCodeforces = "codeforces.com"
-	ResourceAtcoder    = "atcoder.jp"
-	ResourceLeetcode   = "leetcode.com"
-	ResourceLuogu      = "luogu.com.cn"
-	ResourceNowcoder   = "ac.nowcoder.com"
+	ResourceCodeforces Resource = "codeforces.com"
+	ResourceAtcoder    Resource = "atcoder.jp"
+	ResourceLeetcode   Resource = "leetcode.com"
+	ResourceLuogu      Resource = "luogu.com.cn"
+	ResourceNowcoder   Resource = "ac.nowcoder.com"
 )
 
-var AllRaceResource = []string{ResourceCodeforces, ResourceLuogu, ResourceAtcoder, ResourceLeetcode, ResourceNowcoder}
+var ResourceName = map[Resource]string{
+	ResourceCodeforces: "Codeforces",
+	ResourceAtcoder:    "Atcoder",
+	ResourceLeetcode:   "力扣",
+	ResourceLuogu:      "洛谷",
+	ResourceNowcoder:   "牛客",
+}
+
+func (r Resource) Name() string {
+	return ResourceName[r]
+}
+
+var AllRaceResource = []Resource{ResourceCodeforces, ResourceLuogu, ResourceAtcoder, ResourceLeetcode, ResourceNowcoder}
 
 type Race struct {
-	Source    string    `json:"source"`
+	Source    Resource  `json:"source"`
 	Name      string    `json:"name"`
 	Link      string    `json:"link"`
 	StartTime time.Time `json:"start_time"`
@@ -115,7 +129,7 @@ func (r *Race) NoUrlString() string {
 				"距离开始: %s\n"+
 				"开始时间: %s\n"+
 				"持续时间: %s\n",
-			r.Source,
+			r.Source.Name(),
 			r.Name,
 			fmt.Sprintf("%02d天%02d小时%02d分钟", int(startLeftTime.Hours())/24, helper.Abs(int(startLeftTime.Hours()))%24, helper.Abs(int(startLeftTime.Minutes()))%60),
 			r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
@@ -131,7 +145,7 @@ func (r *Race) NoUrlString() string {
 				"距离结束: %s\n"+
 				"开始时间: %s\n"+
 				"持续时间: %s\n",
-			r.Source,
+			r.Source.Name(),
 			r.Name,
 			fmt.Sprintf("%02d天%02d小时%02d分钟", int(endLeftTime.Hours())/24, helper.Abs(int(endLeftTime.Hours()))%24, helper.Abs(int(endLeftTime.Minutes()))%60),
 			r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
@@ -145,7 +159,7 @@ func (r *Race) NoUrlString() string {
 			"比赛名称: %s\n"+
 			"开始时间: %s\n"+
 			"持续时间: %s\n",
-		r.Source,
+		r.Source.Name(),
 		r.Name,
 		r.StartTime.In(time.Local).Format("2006-01-02 15:04:05"),
 		dStr,

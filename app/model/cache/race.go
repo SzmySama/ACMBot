@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-func keyRace(source string) string {
-	return "race:" + source
+func keyRace(source model.Resource) string {
+	return "race:" + string(source)
 }
 
-func SetRace(source string, data []model.Race, exp time.Duration) error {
+func SetRace(source model.Resource, data []model.Race, exp time.Duration) error {
 	res, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -18,7 +18,7 @@ func SetRace(source string, data []model.Race, exp time.Duration) error {
 	return rdb.Set(ctx, keyRace(source), res, exp).Err()
 }
 
-func GetRace(source string) ([]model.Race, error) {
+func GetRace(source model.Resource) ([]model.Race, error) {
 	races, err := rdb.Get(ctx, keyRace(source)).Result()
 	if err != nil {
 		return nil, err

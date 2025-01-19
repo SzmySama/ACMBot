@@ -79,7 +79,7 @@ func (c ClistContest) ToRace() model.Race {
 		e = time.Unix(0, 0)
 	}
 	return model.Race{
-		Source:    c.Resource,
+		Source:    model.Resource(c.Resource),
 		Name:      c.Event,
 		Link:      c.Href,
 		StartTime: s,
@@ -87,7 +87,7 @@ func (c ClistContest) ToRace() model.Race {
 	}
 }
 
-func FetchClistContests(source string) ([]model.Race, error) {
+func FetchClistContests(source model.Resource) ([]model.Race, error) {
 	races, err := fetchClistAPI[[]ClistContest]("contest", map[string]any{
 		"resource": source,
 		"order_by": "start",
